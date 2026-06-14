@@ -1,3 +1,5 @@
+import { getCachedTranslation, setCachedTranslation } from '../data/translationCache';
+
 export type Syllable = { th: string; rom: string; tone: 'mid'|'low'|'falling'|'high'|'rising'; cls: 'mid'|'high'|'low' };
 export type TranslateResponse = { syllables: Syllable[]; en: string; rtgs: string; particle: 'khrap'|'kha'|'neutral' };
 export type TtsResponse = { audioContent: string }; // base64 MP3
@@ -19,13 +21,17 @@ async function authHeaders(): Promise<Record<string, string>> {
 }
 
 export async function translate({ text, formality, gender }: TranslateArgs): Promise<TranslateResponse> {
+  const cached = getCachedTranslation(text);
+  if (cached) return cached;
   const res = await fetch(`${API_BASE}/translate`, {
     method: 'POST',
     headers: await authHeaders(),
     body: JSON.stringify({ text, formality, gender }),
   });
   if (!res.ok) throw new Error(`translate: ${res.status}`);
-  return res.json();
+  const result = (await res.json()) as TranslateResponse;
+  setCachedTranslation(text, result);
+  return result;
 }
 
 export async function tts({ text, voice }: { text: string; voice?: string }): Promise<TtsResponse> {
