@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isMember() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/members/$(request.auth.uid));
+    }
+
+    match /invites/{token} {
+      allow get: if true;
+      allow list, delete: if isMember();
+      allow create: if isMember() && token.size() >= 20;
+    }
+
+    match /members/{uid} {
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.inviteToken is string
+        && exists(/databases/$(database)/documents/invites/$(request.resource.data.inviteToken));
+      allow read, delete: if isMember();
+    }
+
+    // --- Sync-ready additions (add when the store adapter mirrors to Firestore, spec 00) ---
+    match /users/{uid}/{doc=**} { allow read, write: if isMember() && request.auth.uid == uid; }
+    match /users/{uid}/progress { allow read: if isMember(); }   // family screen (spec 24)
+    match /shared/{doc=**}      { allow read, write: if isMember(); }
+    match /translations/{id}    { allow read: if isMember(); allow write: if false; }
+  }
+}
