@@ -99,6 +99,46 @@
   cursor: default;
 }
 
+.voiceRow {
+  display: flex;
+  gap: 8px;
+}
+
+.voiceBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--ui);
+  color: var(--muted);
+  background: var(--raise, var(--bg));
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  padding: 12px 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.voiceBtnActive {
+  color: var(--accentInk);
+  background: var(--accentSoft);
+  border-color: var(--accent);
+}
+
+.voiceLabel {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.voiceSub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .inviteOut {
   display: flex;
   flex-direction: column;

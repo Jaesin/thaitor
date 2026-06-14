@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { useMember } from '../auth/useMember';
+import { getDefaultVoice, setDefaultVoice, type DefaultVoice } from '../worker/voice';
 import styles from './Settings.module.css';
+
+const VOICE_OPTIONS: { key: DefaultVoice; label: string; sub: string }[] = [
+  { key: 'female', label: 'Female', sub: 'Premwadee' },
+  { key: 'female2', label: 'Female 2', sub: 'Achara' },
+  { key: 'male', label: 'Male', sub: 'Niwat' },
+];
 
 const APP_ORIGIN = 'https://thaitor.mulenex.org';
 
@@ -13,6 +20,12 @@ const Settings: React.FC = () => {
   const [invite, setInvite] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [voice, setVoice] = useState<DefaultVoice>(getDefaultVoice);
+
+  function selectVoice(next: DefaultVoice) {
+    setVoice(next);
+    setDefaultVoice(next);
+  }
 
   async function onGenerate() {
     setError(null);
@@ -63,6 +76,27 @@ const Settings: React.FC = () => {
         <div className={styles.row}>
           <span className={styles.rowLabel}>Device ID</span>
           <span className={styles.uid}>{shortUid}</span>
+        </div>
+      </div>
+
+      <div className={styles.card}>
+        <span className={styles.sectionLabel}>Default voice</span>
+        <p className={styles.lede}>
+          Used for audio when no politeness particle is selected.
+        </p>
+        <div className={styles.voiceRow} role="group" aria-label="Default voice">
+          {VOICE_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              className={`${styles.voiceBtn} ${voice === opt.key ? styles.voiceBtnActive : ''}`}
+              onClick={() => selectVoice(opt.key)}
+              aria-pressed={voice === opt.key}
+            >
+              <span className={styles.voiceLabel}>{opt.label}</span>
+              <span className={styles.voiceSub}>{opt.sub}</span>
+            </button>
+          ))}
         </div>
       </div>
 

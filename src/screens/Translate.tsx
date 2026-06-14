@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TONE, type ToneKey } from '../themes/constants';
 import { translate, tts, type TranslateResponse } from '../worker/api';
+import { VOICE_NAME, getDefaultVoice } from '../worker/voice';
 import styles from './Translate.module.css';
 
 type Particle = 'khrap' | 'kha' | 'neutral';
 type AudioState = 'idle' | 'loading' | 'playing';
+
+function voiceForParticle(particle: Particle): string {
+  if (particle === 'khrap') return VOICE_NAME.male;
+  if (particle === 'kha') return VOICE_NAME.female;
+  return VOICE_NAME[getDefaultVoice()];
+}
 
 const PARTICLE_THAI: Record<Particle, string> = {
   khrap: 'ครับ',
@@ -42,9 +49,11 @@ const Translate: React.FC = () => {
   const [particle, setParticle] = useState<Particle>('neutral');
   const [starred, setStarred] = useState(false);
   const [audioState, setAudioState] = useState<AudioState>('idle');
+  const [audioReady, setAudioReady] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+  const prefetchIdRef = useRef(0);
 
   function releaseAudio() {
     if (audioRef.current) {
@@ -55,9 +64,38 @@ const Translate: React.FC = () => {
       URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = null;
     }
+    setAudioReady(false);
   }
 
   useEffect(() => releaseAudio, []);
+
+  const prefetchAudio = useCallback((res: TranslateResponse, p: Particle, autoPlay = false) => {
+    const phrase = res.syllables.map((s) => s.th).join('') + PARTICLE_THAI[p];
+    const id = ++prefetchIdRef.current;
+    (async () => {
+      try {
+        const { audioContent } = await tts({ text: phrase, voice: voiceForParticle(p) });
+        const url = decodeAudio(audioContent);
+        if (prefetchIdRef.current !== id) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = url;
+        setAudioReady(true);
+        if (autoPlay) {
+          const audio = new Audio(url);
+          audioRef.current = audio;
+          audio.addEventListener('ended', () => { audioRef.current = null; setAudioState('idle'); });
+          audio.addEventListener('error', () => { audioRef.current = null; setAudioState('idle'); });
+          await audio.play();
+          setAudioState('playing');
+        }
+      } catch {
+        // Silent — falls back to speechSynthesis on click.
+      }
+    })();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +112,7 @@ const Translate: React.FC = () => {
       setResult(res);
       setParticle(res.particle);
       setStarred(false);
+      prefetchAudio(res, res.particle, true);
     } catch {
       setError("Couldn't reach the translator. Check your connection and try again.");
     } finally {
@@ -92,9 +131,18 @@ const Translate: React.FC = () => {
   function selectParticle(next: Particle) {
     if (next === particle) return;
     setParticle(next);
-    // Invalidate cached audio so the next play fetches the updated phrase.
+    // Invalidate cached audio and prefetch the updated phrase with the right voice.
     releaseAudio();
     setAudioState('idle');
+    if (result) prefetchAudio(result, next);
+  }
+
+  function speakFallback(phrase: string) {
+    const utterance = new SpeechSynthesisUtterance(phrase);
+    utterance.lang = 'th-TH';
+    utterance.onend = () => setAudioState('idle');
+    setAudioState('playing');
+    window.speechSynthesis.speak(utterance);
   }
 
   async function handlePlay() {
@@ -103,6 +151,7 @@ const Translate: React.FC = () => {
     if (audioState === 'playing') {
       audioRef.current?.pause();
       audioRef.current = null;
+      window.speechSynthesis.cancel();
       setAudioState('idle');
       return;
     }
@@ -110,12 +159,12 @@ const Translate: React.FC = () => {
 
     const phrase = result.syllables.map((s) => s.th).join('') + PARTICLE_THAI[particle];
 
-    setAudioState('loading');
+    if (!audioReady || !audioUrlRef.current) {
+      speakFallback(phrase);
+      return;
+    }
+
     try {
-      if (!audioUrlRef.current) {
-        const { audioContent } = await tts({ text: phrase });
-        audioUrlRef.current = decodeAudio(audioContent);
-      }
       const audio = new Audio(audioUrlRef.current);
       audioRef.current = audio;
       audio.addEventListener('ended', () => {
@@ -129,7 +178,7 @@ const Translate: React.FC = () => {
       await audio.play();
       setAudioState('playing');
     } catch {
-      releaseAudio();
+      audioRef.current = null;
       setAudioState('idle');
       setError('Audio playback failed. Try again.');
     }
@@ -247,7 +296,9 @@ const Translate: React.FC = () => {
 
           <button
             type="button"
-            className={`${styles.playBtn} ${audioState === 'playing' ? styles.playBtnPlaying : ''}`}
+            className={`${styles.playBtn} ${audioState === 'playing' ? styles.playBtnPlaying : ''} ${
+              !audioReady && audioState === 'idle' ? styles.playBtnLoading : ''
+            }`}
             onClick={handlePlay}
             disabled={audioState === 'loading'}
             aria-label={audioState === 'playing' ? 'Stop audio' : 'Play audio'}

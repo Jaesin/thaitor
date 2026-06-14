@@ -322,6 +322,13 @@
   cursor: default;
 }
 
+.playBtnLoading {
+  border-style: dashed;
+  border-color: var(--muted);
+  color: var(--muted);
+  background: transparent;
+}
+
 .playBtnPlaying {
   background: var(--accent);
   color: var(--bg);

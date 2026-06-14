@@ -28,11 +28,11 @@ export async function translate({ text, formality, gender }: TranslateArgs): Pro
   return res.json();
 }
 
-export async function tts({ text }: { text: string }): Promise<TtsResponse> {
+export async function tts({ text, voice }: { text: string; voice?: string }): Promise<TtsResponse> {
   const res = await fetch(`${API_BASE}/tts`, {
     method: 'POST',
     headers: await authHeaders(),
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, voice }),
   });
   if (!res.ok) throw new Error(`tts: ${res.status}`);
   return res.json();
