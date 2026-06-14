@@ -150,6 +150,10 @@
   .eq[data-playing] span:nth-child(4) { animation-delay: 0.45s; }
 }
 
+.speakBtnPending {
+  border-style: dotted;
+}
+
 .speakBtnPlaying {
   background: var(--accent);
   color: var(--bg);

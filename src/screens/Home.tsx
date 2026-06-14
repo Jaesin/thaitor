@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TONE, type ToneKey } from '../themes/constants';
 import { THEMES, type ThemeKey } from '../themes/tokens';
 import { useTheme } from '../themes/ThemeContext';
@@ -48,7 +48,38 @@ const PHRASE_THAI = PHRASE_OF_THE_DAY.syllables.map((s) => s.thai).join('');
 const Home: React.FC = () => {
   const { themeKey, setTheme } = useTheme();
   const [speakState, setSpeakState] = useState<'idle' | 'loading' | 'playing'>('idle');
+  const [audioReady, setAudioReady] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const cachedAudioUrl = useRef<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { audioContent } = await tts({ text: PHRASE_THAI });
+        const binary = atob(audioContent);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        cachedAudioUrl.current = url;
+        setAudioReady(true);
+      } catch {
+        // Silent — falls back to speechSynthesis on click.
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (cachedAudioUrl.current) {
+        URL.revokeObjectURL(cachedAudioUrl.current);
+        cachedAudioUrl.current = null;
+      }
+    };
+  }, []);
 
   const reviewsDone = 7;
   const reviewsTotal = 12;
@@ -60,42 +91,41 @@ const Home: React.FC = () => {
     if (speakState === 'loading') return;
 
     // If already playing, stop it.
-    if (audioRef.current) {
-      audioRef.current.pause();
+    if (speakState === 'playing') {
+      audioRef.current?.pause();
       audioRef.current = null;
       setSpeakState('idle');
       return;
     }
 
-    setSpeakState('loading');
-    try {
-      const { audioContent } = await tts({ text: PHRASE_THAI });
-      const binary = atob(audioContent);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: 'audio/mpeg' });
-      const url = URL.createObjectURL(blob);
-
-      const audio = new Audio(url);
+    if (audioReady && cachedAudioUrl.current) {
+      const audio = new Audio(cachedAudioUrl.current);
       audioRef.current = audio;
       setSpeakState('playing');
 
       audio.addEventListener('ended', () => {
-        URL.revokeObjectURL(url);
         audioRef.current = null;
         setSpeakState('idle');
       });
       audio.addEventListener('error', () => {
-        URL.revokeObjectURL(url);
         audioRef.current = null;
         setSpeakState('idle');
       });
 
-      await audio.play();
-    } catch {
-      audioRef.current = null;
-      setSpeakState('idle');
+      try {
+        await audio.play();
+      } catch {
+        audioRef.current = null;
+        setSpeakState('idle');
+      }
+      return;
     }
+
+    // Fallback — no cached audio, use the browser's speech synthesis.
+    const utterance = new SpeechSynthesisUtterance(PHRASE_THAI);
+    utterance.onend = () => setSpeakState('idle');
+    setSpeakState('playing');
+    window.speechSynthesis.speak(utterance);
   }
 
   return (
@@ -128,7 +158,9 @@ const Home: React.FC = () => {
           <span className={styles.phraseLabel}>Phrase of the day</span>
           <button
             type="button"
-            className={`${styles.speakBtn} ${speakState === 'playing' ? styles.speakBtnPlaying : ''}`}
+            className={`${styles.speakBtn} ${speakState === 'playing' ? styles.speakBtnPlaying : ''} ${
+              !audioReady && speakState === 'idle' ? styles.speakBtnPending : ''
+            }`}
             onClick={handleListen}
             disabled={speakState === 'loading'}
             aria-label={speakState === 'playing' ? 'Stop' : 'Listen to phrase'}

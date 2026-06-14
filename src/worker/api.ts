@@ -12,15 +12,10 @@ const API_BASE = import.meta.env.DEV
   : 'https://thaitor-worker.jaesinner.workers.dev';
 
 async function authHeaders(): Promise<Record<string, string>> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  try {
-    const { auth, ensureSignedIn } = await import('../firebase');
-    const user = auth.currentUser ?? (await ensureSignedIn());
-    if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`;
-  } catch {
-    /* leave Authorization off — the request may still succeed in dev */
-  }
-  return headers;
+  const { auth, ensureSignedIn } = await import('../firebase');
+  const user = auth.currentUser ?? (await ensureSignedIn());
+  const token = await user.getIdToken();
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 }
 
 export async function translate({ text, formality, gender }: TranslateArgs): Promise<TranslateResponse> {
