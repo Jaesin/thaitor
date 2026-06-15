@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, ensureSignedIn } from '../firebase';
+import { pullFromFirestore } from '../data/sync';
 
 export type MemberStatus = 'loading' | 'public' | 'joining' | 'member';
 
@@ -61,6 +62,9 @@ export function useMember(): UseMemberResult {
       if (cancelled) return;
       uidRef.current = user.uid;
       setUid(user.uid);
+
+      // Pull once on mount (fire-and-forget, don't await)
+      pullFromFirestore(user.uid).catch(() => {});
 
       unsub = onSnapshot(
         doc(db, 'members', user.uid),

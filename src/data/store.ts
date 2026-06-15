@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Syllable } from '../worker/api';
 import { BUILT_IN_PHRASES } from './phrases';
+import { syncHistory, syncPhrase, syncProfile, syncSRS } from './sync';
 
 type Particle = 'khrap' | 'kha' | 'neutral';
 
@@ -81,7 +82,9 @@ export async function getHistory(): Promise<HistoryEntry[]> {
 
 export async function putHistory(entry: Omit<HistoryEntry, 'updatedAt'>): Promise<void> {
   try {
-    await (await getDB()).put('history', { ...entry, updatedAt: new Date().toISOString() });
+    const record: HistoryEntry = { ...entry, updatedAt: new Date().toISOString() };
+    await (await getDB()).put('history', record);
+    syncHistory(record).catch(() => {});
   } catch {
     /* unavailable */
   }
@@ -97,7 +100,9 @@ export async function getPhrasebook(): Promise<PhrasebookEntry[]> {
 
 export async function putPhrase(entry: Omit<PhrasebookEntry, 'updatedAt'>): Promise<void> {
   try {
-    await (await getDB()).put('phrasebook', { ...entry, updatedAt: new Date().toISOString() });
+    const record: PhrasebookEntry = { ...entry, updatedAt: new Date().toISOString() };
+    await (await getDB()).put('phrasebook', record);
+    syncPhrase(record).catch(() => {});
   } catch {
     /* unavailable */
   }
@@ -113,7 +118,9 @@ export async function getProfile(): Promise<ProfileEntry | null> {
 
 export async function putProfile(entry: Omit<ProfileEntry, 'updatedAt'>): Promise<void> {
   try {
-    await (await getDB()).put('profile', { ...entry, updatedAt: new Date().toISOString() });
+    const record: ProfileEntry = { ...entry, updatedAt: new Date().toISOString() };
+    await (await getDB()).put('profile', record);
+    syncProfile(record).catch(() => {});
   } catch {
     /* unavailable */
   }
@@ -130,6 +137,7 @@ export async function getSRSRecord(phraseId: string): Promise<SRSRecord | null> 
 export async function putSRSRecord(record: SRSRecord): Promise<void> {
   try {
     await (await getDB()).put('srs', record);
+    syncSRS(record).catch(() => {});
   } catch {
     /* unavailable */
   }
@@ -169,6 +177,53 @@ export async function initSRS(phraseId: string): Promise<void> {
   } catch {
     /* unavailable */
   }
+}
+
+// Raw put functions — used by pull sync only; do NOT call back to Firestore
+export async function putHistoryRaw(entry: HistoryEntry): Promise<void> {
+  try {
+    const db_ = await getDB();
+    const existing = await db_.get('history', entry.id);
+    if (!existing || entry.updatedAt > existing.updatedAt) {
+      await db_.put('history', entry);
+    }
+  } catch {}
+}
+
+export async function putPhraseRaw(entry: PhrasebookEntry): Promise<void> {
+  try {
+    const db_ = await getDB();
+    const existing = await db_.get('phrasebook', entry.id);
+    if (!existing || entry.updatedAt > existing.updatedAt) {
+      await db_.put('phrasebook', entry);
+    }
+  } catch {}
+}
+
+export async function putProfileRaw(entry: ProfileEntry): Promise<void> {
+  try {
+    const db_ = await getDB();
+    const existing = await db_.get('profile', 'local');
+    if (!existing || entry.updatedAt > existing.updatedAt) {
+      await db_.put('profile', entry);
+    }
+  } catch {}
+}
+
+export async function putSRSRaw(record: SRSRecord): Promise<void> {
+  try {
+    const db_ = await getDB();
+    const existing = await db_.get('srs', record.phraseId);
+    if (!existing) {
+      await db_.put('srs', record);
+      return;
+    }
+    const remoteTs = record.lastReviewedAt ?? record.createdAt;
+    const existingTs = existing.lastReviewedAt ?? existing.createdAt;
+    if (remoteTs > existingTs) {
+      await db_.put('srs', record);
+    }
+  } catch {}
 }
 
 export async function seedPhrasebook(): Promise<void> {

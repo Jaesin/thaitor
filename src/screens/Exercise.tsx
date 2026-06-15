@@ -13,6 +13,7 @@ import {
 } from '../data/store';
 import { buildSession, gradePhrase, type Grade, type SessionResult } from '../data/srs';
 import { BUILT_IN_PHRASES } from '../data/phrases';
+import { completeQuest } from '../data/quests';
 import styles from './Exercise.module.css';
 
 type ExerciseItem = {
@@ -133,6 +134,7 @@ const Exercise: React.FC<ExerciseProps> = ({ onDone }) => {
       const phrase = queueRef.current[index];
       if (!phrase) {
         if (onDoneRef.current) {
+          completeQuest('practice');
           onDoneRef.current({
             reviewed: reviewedRef.current,
             masteredPhraseIds: [...masteredRef.current],
@@ -140,6 +142,7 @@ const Exercise: React.FC<ExerciseProps> = ({ onDone }) => {
           });
           return;
         }
+        completeQuest('practice');
         setDone(true);
         setItem(null);
         return;

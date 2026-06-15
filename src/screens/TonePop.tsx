@@ -5,6 +5,7 @@ import { getCachedAudio, setCachedAudio } from '../data/audioCache';
 import { BUILT_IN_PHRASES } from '../data/phrases';
 import { getDefaultVoice, VOICE_NAME } from '../worker/voice';
 import type { SessionResult } from '../data/srs';
+import { completeQuest } from '../data/quests';
 import styles from './TonePop.module.css';
 
 const ROUND_COUNT = 6;
@@ -205,6 +206,7 @@ const TonePop: React.FC<TonePopProps> = ({ onDone }) => {
     const nextIndex = index + 1;
     releaseAudio();
     if (nextIndex >= rounds.length) {
+      completeQuest('arcade');
       if (onDoneRef.current) {
         onDoneRef.current({
           reviewed: ROUND_COUNT,

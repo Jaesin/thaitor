@@ -9,9 +9,59 @@ import styles from './ToneTrace.module.css';
 type RecordingState = 'idle' | 'recording' | 'done';
 type TargetSyllable = Syllable & { phraseEn: string };
 
-// Slightly rising placeholder contour (no real pitch detection — see spec).
+// Slightly rising placeholder contour (fallback when pitch detection fails).
 const PLACEHOLDER_LIVE_PATH = 'M9 28 C15 26 22 25 30 24 C38 23 42 22 47 21';
 const RECORD_MS = 3000;
+
+function detectPitch(buffer: Float32Array, sampleRate: number): number | null {
+  const SIZE = buffer.length;
+  const MAX_SAMPLES = Math.floor(SIZE / 2);
+  const MIN_FREQ = 80; // Hz
+  const MAX_FREQ = 400; // Hz
+
+  let bestCorr = 0;
+  let bestOffset = -1;
+  let rms = 0;
+  for (let i = 0; i < SIZE; i++) rms += buffer[i] * buffer[i];
+  rms = Math.sqrt(rms / SIZE);
+  if (rms < 0.01) return null; // silence threshold
+
+  const minOffset = Math.floor(sampleRate / MAX_FREQ);
+  const maxOffset = Math.floor(sampleRate / MIN_FREQ);
+
+  for (let offset = minOffset; offset <= Math.min(maxOffset, MAX_SAMPLES); offset++) {
+    let corr = 0;
+    for (let i = 0; i < MAX_SAMPLES; i++) corr += Math.abs(buffer[i] - buffer[i + offset]);
+    corr = 1 - corr / MAX_SAMPLES;
+    if (corr > bestCorr) {
+      bestCorr = corr;
+      bestOffset = offset;
+    }
+  }
+
+  if (bestOffset === -1 || bestCorr < 0.9) return null;
+  return sampleRate / bestOffset;
+}
+
+function freqToY(freq: number): number {
+  const clamped = Math.max(80, Math.min(400, freq));
+  return 35 - ((clamped - 80) / (400 - 80)) * 30;
+}
+
+function buildPath(points: Array<{ x: number; y: number }>): string {
+  if (points.length < 2) return PLACEHOLDER_LIVE_PATH;
+
+  let d = `M${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const cpx = (prev.x + curr.x) / 2;
+    d += ` C${cpx.toFixed(1)} ${prev.y.toFixed(1)} ${cpx.toFixed(1)} ${curr.y.toFixed(1)} ${curr.x.toFixed(1)} ${curr.y.toFixed(1)}`;
+  }
+
+  return d;
+}
 
 const QUESTION: Record<ToneKey, string> = {
   mid: 'Did it stay level throughout?',
@@ -205,10 +255,50 @@ const ToneTrace: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const finishRecording = useCallback((stream: MediaStream) => {
+  const finishRecording = useCallback(async (stream: MediaStream, chunks: BlobPart[]) => {
     stream.getTracks().forEach((t) => t.stop());
     recorderRef.current = null;
-    setLivePath(PLACEHOLDER_LIVE_PATH);
+
+    let path = PLACEHOLDER_LIVE_PATH;
+
+    try {
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      const arrayBuffer = await blob.arrayBuffer();
+      const audioCtx = new AudioContext();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      await audioCtx.close();
+
+      const channelData = audioBuffer.getChannelData(0);
+      const sr = audioBuffer.sampleRate;
+
+      // Sample pitch at fixed steps across the recording.
+      const windowSize = Math.floor(sr * 0.1); // 100ms window
+      const stepMs = 150;
+      const stepSamples = Math.floor((sr * stepMs) / 1000);
+      const numSteps = 7;
+
+      const points: Array<{ x: number; y: number }> = [];
+      for (let i = 0; i < numSteps; i++) {
+        const start = Math.floor(i * stepSamples);
+        if (start + windowSize > channelData.length) break;
+        const window = channelData.slice(start, start + windowSize);
+        const freq = detectPitch(window, sr);
+        if (freq !== null) {
+          const t = i / (numSteps - 1);
+          const x = 9 + t * 30;
+          const y = freqToY(freq);
+          points.push({ x, y });
+        }
+      }
+
+      if (points.length >= 2) {
+        path = buildPath(points);
+      }
+    } catch {
+      // Fall back to placeholder on any decode/analysis error.
+    }
+
+    setLivePath(path);
     setRecordingState('done');
   }, []);
 
@@ -219,9 +309,13 @@ const ToneTrace: React.FC = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
       recorderRef.current = recorder;
-      recorder.addEventListener('stop', () => finishRecording(stream));
-      // Chunks are collected but unused — no real pitch detection yet.
-      recorder.addEventListener('dataavailable', () => {});
+      const chunks: BlobPart[] = [];
+      recorder.addEventListener('dataavailable', (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      });
+      recorder.addEventListener('stop', () => {
+        void finishRecording(stream, chunks);
+      });
       recorder.start();
       setRecordingState('recording');
       recordTimerRef.current = setTimeout(() => {

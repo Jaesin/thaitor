@@ -4,6 +4,9 @@ import { THEMES, type ThemeKey } from '../themes/tokens';
 import { useTheme } from '../themes/ThemeContext';
 import { useMode, type AppMode } from '../themes/ModeContext';
 import { tts } from '../worker/api';
+import { getDailyProgress, completeQuest } from '../data/quests';
+import { getDueNow, getAllSRSRecords } from '../data/store';
+import { BUILT_IN_PHRASES } from '../data/phrases';
 import styles from './Home.module.css';
 
 interface Syllable {
@@ -18,16 +21,20 @@ interface Phrase {
   literal: string;
 }
 
-// Featured phrase of the day — hard-coded for now.
-const PHRASE_OF_THE_DAY: Phrase = {
-  syllables: [
-    { thai: 'สวัส', roman: 'sà-wàt', tone: 'low' },
-    { thai: 'ดี', roman: 'dii', tone: 'mid' },
-    { thai: 'ครับ', roman: 'khráp', tone: 'high' },
-  ],
-  meaning: 'Hello',
-  literal: 'A polite greeting — said by men.',
-};
+function getPhraseOfTheDay(): Phrase {
+  // Use day-of-year so it changes daily but is stable within a day
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
+  const entry = BUILT_IN_PHRASES[dayOfYear % BUILT_IN_PHRASES.length];
+  return {
+    syllables: entry.syllables.map((s) => ({ thai: s.th, roman: s.rom, tone: s.tone })),
+    meaning: entry.en,
+    literal: entry.rtgs ?? entry.syllables.map((s) => s.rom).join('-'),
+  };
+}
+
+const PHRASE_OF_THE_DAY = getPhraseOfTheDay();
 
 const MODE_ORDER: AppMode[] = ['travel', 'learn'];
 const MODE_LABEL: Record<AppMode, string> = {
@@ -57,6 +64,7 @@ const Home: React.FC = () => {
   const { mode, setMode } = useMode();
   const [speakState, setSpeakState] = useState<'idle' | 'loading' | 'playing'>('idle');
   const [audioReady, setAudioReady] = useState(false);
+  const [quests, setQuests] = useState(() => getDailyProgress());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const cachedAudioUrl = useRef<string | null>(null);
 
@@ -89,9 +97,19 @@ const Home: React.FC = () => {
     };
   }, []);
 
-  const reviewsDone = 7;
-  const reviewsTotal = 12;
-  const pct = reviewsDone / reviewsTotal;
+  const [reviewsDone, setReviewsDone] = useState(0);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
+
+  useEffect(() => {
+    (async () => {
+      const [due, all] = await Promise.all([getDueNow(), getAllSRSRecords()]);
+      setReviewsTotal(all.length);
+      // "done" = records that are NOT due (already reviewed today or future intervals)
+      setReviewsDone(all.length - due.length);
+    })();
+  }, []);
+
+  const pct = reviewsTotal === 0 ? 0 : reviewsDone / reviewsTotal;
   const r = 22;
   const circ = 2 * Math.PI * r;
 
@@ -109,6 +127,8 @@ const Home: React.FC = () => {
     if (audioReady && cachedAudioUrl.current) {
       const audio = new Audio(cachedAudioUrl.current);
       audioRef.current = audio;
+      completeQuest('listen');
+      setQuests(getDailyProgress());
       setSpeakState('playing');
 
       audio.addEventListener('ended', () => {
@@ -132,6 +152,8 @@ const Home: React.FC = () => {
     // Fallback — no cached audio, use the browser's speech synthesis.
     const utterance = new SpeechSynthesisUtterance(PHRASE_THAI);
     utterance.onend = () => setSpeakState('idle');
+    completeQuest('listen');
+    setQuests(getDailyProgress());
     setSpeakState('playing');
     window.speechSynthesis.speak(utterance);
   }
@@ -264,12 +286,39 @@ const Home: React.FC = () => {
         <div className={styles.progressText}>
           <span className={styles.progressTitle}>Daily phrases</span>
           <span className={styles.progressSub}>
-            {reviewsTotal - reviewsDone} cards left in today&rsquo;s deck.
+            {reviewsTotal === 0
+              ? 'No cards yet — start learning!'
+              : `${reviewsTotal - reviewsDone} cards left in today’s deck.`}
           </span>
         </div>
         <a className={styles.reviewBtn} href="#/deck">
           Review
         </a>
+      </section>
+
+      <section className={styles.quests} aria-label="Daily quests">
+        <p className={styles.sectionLabel}>Daily quests</p>
+        <ul className={styles.questList}>
+          {quests.map(({ quest, done }) => (
+            <li
+              key={quest.id}
+              className={`${styles.questItem} ${done ? styles.questDone : ''}`}
+            >
+              <span className={styles.questIcon} aria-hidden="true">
+                {quest.icon}
+              </span>
+              <span className={styles.questText}>
+                <span className={styles.questLabel}>{quest.label}</span>
+                <span className={styles.questDesc}>{quest.desc}</span>
+              </span>
+              {done && (
+                <span className={styles.questCheck} aria-label="Completed">
+                  ✓
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   );
