@@ -1,0 +1,241 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 18px 32px;
+  max-width: 540px;
+  margin: 0 auto;
+  min-height: 100%;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  text-align: center;
+}
+
+.eyebrow {
+  font-family: var(--ui);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.thai {
+  font-family: var(--thai);
+  font-size: 52px;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0;
+}
+
+.rom {
+  font-family: var(--ui);
+  font-size: 15px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.pitchStaff {
+  position: relative;
+  display: flex;
+  border: 1px solid var(--hair);
+  border-radius: 18px;
+  background: var(--surface);
+  padding: 12px 14px 12px 4px;
+}
+
+.staffLabels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px 2px 6px 6px;
+  width: 34px;
+}
+
+.staffLabel {
+  font-family: var(--ui);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.pitchSvg {
+  flex: 1;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.hearBtn,
+.recordBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ui);
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 14px 20px;
+  cursor: pointer;
+  min-width: 150px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.hearBtn {
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--hair);
+}
+
+.hearBtnPlaying {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.recordBtn {
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.recordBtn:disabled {
+  cursor: default;
+}
+
+.recordBtnActive {
+  position: relative;
+  background: oklch(0.62 0.2 25);
+  border-color: oklch(0.62 0.2 25);
+}
+
+.recordBtnActive::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 2px solid oklch(0.62 0.2 25);
+  animation: recordPulse 1.4s ease-out infinite;
+}
+
+@keyframes recordPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+
+.error {
+  font-family: var(--ui);
+  font-size: 14px;
+  color: oklch(0.55 0.2 25);
+  text-align: center;
+  margin: 0;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--hair);
+  background: var(--surface);
+  text-align: center;
+}
+
+.question {
+  font-family: var(--ui);
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.feedback {
+  font-family: var(--display);
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--ink);
+  margin: 0;
+}
+
+.assessRow {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.assessClose,
+.assessNot {
+  flex: 1 1 0;
+  font-family: var(--ui);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 14px;
+  padding: 14px 12px;
+  cursor: pointer;
+  border: 2px solid var(--hair);
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.assessClose:hover {
+  border-color: oklch(0.7 0.16 150);
+  background: oklch(0.7 0.16 150 / 0.1);
+  color: oklch(0.45 0.16 150);
+}
+
+.assessNot:hover {
+  border-color: var(--muted);
+  color: var(--muted);
+}
+
+.affirm {
+  font-family: var(--ui);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
+}
+
+.resultActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.tryAgainBtn,
+.nextBtn {
+  font-family: var(--ui);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
+}
+
+.tryAgainBtn {
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--hair);
+}
+
+.nextBtn {
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+}

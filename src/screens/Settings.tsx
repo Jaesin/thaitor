@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMember } from '../auth/useMember';
+import { getProfile, putProfile } from '../data/store';
 import { getDefaultVoice, setDefaultVoice, type DefaultVoice } from '../worker/voice';
 import styles from './Settings.module.css';
 
@@ -21,10 +22,28 @@ const Settings: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [voice, setVoice] = useState<DefaultVoice>(getDefaultVoice);
+  const [localName, setLocalName] = useState('');
+  const [nameSaved, setNameSaved] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getProfile().then((profile) => {
+      if (active) setLocalName(profile?.name ?? member.displayName ?? '');
+    });
+    return () => {
+      active = false;
+    };
+  }, [member.displayName]);
 
   function selectVoice(next: DefaultVoice) {
     setVoice(next);
     setDefaultVoice(next);
+  }
+
+  async function onSaveName() {
+    await putProfile({ id: 'local', name: localName });
+    setNameSaved(true);
+    setTimeout(() => setNameSaved(false), 2000);
   }
 
   async function onGenerate() {
@@ -71,7 +90,18 @@ const Settings: React.FC = () => {
       <div className={styles.card}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Display name</span>
-          <span className={styles.rowValue}>{member.displayName ?? '—'}</span>
+          <div className={styles.nameRow}>
+            <input
+              className={styles.nameInput}
+              value={localName}
+              onChange={(e) => setLocalName(e.target.value)}
+              placeholder="Your name"
+            />
+            <button className={styles.button} type="button" onClick={onSaveName}>
+              Save
+            </button>
+            {nameSaved && <span className={styles.savedHint}>Saved ✓</span>}
+          </div>
         </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Device ID</span>

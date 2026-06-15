@@ -3,7 +3,8 @@ import { TONE, type ToneKey } from '../themes/constants';
 import { translate, tts, type TranslateResponse } from '../worker/api';
 import { VOICE_NAME, getDefaultVoice } from '../worker/voice';
 import { getCachedAudio, setCachedAudio } from '../data/audioCache';
-import { putHistory, type PhrasebookEntry } from '../data/store';
+import { getCachedTranslation } from '../data/translationCache';
+import { putHistory, putPhrase, type PhrasebookEntry } from '../data/store';
 import { BUILT_IN_PHRASES } from '../data/phrases';
 import styles from './Translate.module.css';
 
@@ -51,13 +52,27 @@ const Translate: React.FC = () => {
   const [result, setResult] = useState<TranslateResponse | null>(null);
   const [particle, setParticle] = useState<Particle>('neutral');
   const [starred, setStarred] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
   const [audioState, setAudioState] = useState<AudioState>('idle');
   const [audioReady, setAudioReady] = useState(false);
   const [phrasebookOpen, setPhrasebookOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const up = () => setIsOnline(true);
+    const down = () => setIsOnline(false);
+    window.addEventListener('online', up);
+    window.addEventListener('offline', down);
+    return () => {
+      window.removeEventListener('online', up);
+      window.removeEventListener('offline', down);
+    };
+  }, []);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
   const prefetchIdRef = useRef(0);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function releaseAudio() {
     if (audioRef.current) {
@@ -71,7 +86,12 @@ const Translate: React.FC = () => {
     setAudioReady(false);
   }
 
-  useEffect(() => releaseAudio, []);
+  useEffect(() => {
+    return () => {
+      releaseAudio();
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   const prefetchAudio = useCallback((res: TranslateResponse, p: Particle, autoPlay = false) => {
     const PARTICLE_TH = new Set(['ครับ', 'คะ', 'ค่ะ', 'นะครับ', 'นะคะ']);
@@ -227,7 +247,10 @@ const Translate: React.FC = () => {
     );
   }
 
-  const trimmedEmpty = text.trim().length === 0;
+  const trimmed = text.trim();
+  const trimmedEmpty = trimmed.length === 0;
+  const offlineUncached =
+    !isOnline && trimmed.length > 0 && getCachedTranslation(trimmed) === null;
 
   return (
     <div className={styles.screen}>
@@ -252,10 +275,35 @@ const Translate: React.FC = () => {
           <>
             <div className={styles.resultHead}>
               <span className={styles.resultLabel}>Thai</span>
+              <span
+                className={`${styles.savedToast} ${savedToast ? styles.savedToastShow : ''}`}
+                role="status"
+                aria-live="polite"
+              >
+                Saved to phrasebook
+              </span>
               <button
                 type="button"
                 className={`${styles.starBtn} ${starred ? styles.starBtnActive : ''}`}
-                onClick={() => setStarred((s) => !s)}
+                onClick={() => {
+                  const next = !starred;
+                  setStarred(next);
+                  if (next && result) {
+                    void putPhrase({
+                      id: crypto.randomUUID(),
+                      en: result.en,
+                      syllables: result.syllables,
+                      rtgs: result.rtgs,
+                      particle,
+                      category: 'saved',
+                      starred: true,
+                      builtIn: false,
+                    });
+                    setSavedToast(true);
+                    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+                    toastTimerRef.current = setTimeout(() => setSavedToast(false), 2000);
+                  }
+                }}
                 disabled={!result}
                 aria-pressed={starred}
                 aria-label={starred ? 'Remove from saved' : 'Save phrase'}
@@ -348,6 +396,12 @@ const Translate: React.FC = () => {
         Common phrases
       </button>
 
+      {!isOnline && (
+        <div className={styles.offlineBanner} role="status">
+          You're offline. Phrases you've translated before are still available.
+        </div>
+      )}
+
       <form className={styles.inputCard} onSubmit={handleSubmit}>
         <textarea
           className={styles.input}
@@ -363,7 +417,7 @@ const Translate: React.FC = () => {
               Clear
             </button>
           )}
-          <button type="submit" className={styles.submitBtn} disabled={loading || trimmedEmpty}>
+          <button type="submit" className={styles.submitBtn} disabled={loading || trimmedEmpty || offlineUncached}>
             {loading ? 'Translating…' : 'Translate'}
           </button>
         </div>

@@ -1,11 +1,88 @@
+import { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { useMode } from './themes/ModeContext';
 import Home from './screens/Home';
 import Translate from './screens/Translate';
-import Play from './screens/Play';
+import Exercise from './screens/Exercise';
+import TonePop from './screens/TonePop';
+import ToneTrace from './screens/ToneTrace';
+import SessionStart from './screens/SessionStart';
+import SessionSummary from './screens/SessionSummary';
 import Deck from './screens/Deck';
 import Join from './screens/Join';
 import Settings from './screens/Settings';
+import { buildSession, type SessionMakeup, type SessionResult } from './data/srs';
 import styles from './Shell.module.css';
+
+type PlayPhase = 'start' | 'build' | 'tonepop' | 'summary';
+
+const PlayHub: React.FC = () => {
+  const [phase, setPhase] = useState<PlayPhase>('start');
+  const [makeup, setMakeup] = useState<SessionMakeup | null>(null);
+  const [result, setResult] = useState<SessionResult | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (phase !== 'start') return;
+    setMakeup(null);
+    (async () => {
+      const next = await buildSession();
+      if (!cancelled) setMakeup(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [phase]);
+
+  if (phase === 'summary' && result) {
+    return (
+      <SessionSummary
+        result={result}
+        onDone={() => {
+          setResult(null);
+          setPhase('start');
+        }}
+      />
+    );
+  }
+
+  if (phase === 'build') {
+    return (
+      <Exercise
+        onDone={(r) => {
+          setResult(r);
+          setPhase('summary');
+        }}
+      />
+    );
+  }
+
+  if (phase === 'tonepop') {
+    return (
+      <TonePop
+        onDone={(r) => {
+          setResult(r);
+          setPhase('summary');
+        }}
+      />
+    );
+  }
+
+  if (!makeup) {
+    return (
+      <div className={styles.playLoading} role="status">
+        Preparing your session…
+      </div>
+    );
+  }
+
+  return (
+    <SessionStart
+      makeup={makeup}
+      onStart={(mode) => setPhase(mode === 'build' ? 'build' : 'tonepop')}
+    />
+  );
+};
 
 type TabId = 'today' | 'translate' | 'play' | 'deck' | 'settings';
 
@@ -65,9 +142,15 @@ const TABS: { id: TabId; label: string; href: string; path: string }[] = [
 
 const BottomNav: React.FC = () => {
   const { pathname } = useLocation();
+  const { mode } = useMode();
+  const tabs = TABS.filter((tab) => {
+    if (tab.id === 'translate') return mode === 'travel';
+    if (tab.id === 'play') return mode === 'learn';
+    return true;
+  });
   return (
     <nav className={styles.nav}>
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const active = pathname === tab.path;
         return (
           <a
@@ -93,8 +176,9 @@ const Shell: React.FC = () => {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/translate" element={<Translate />} />
-            <Route path="/play" element={<Play />} />
+            <Route path="/play" element={<PlayHub />} />
             <Route path="/deck" element={<Deck />} />
+            <Route path="/trace" element={<ToneTrace />} />
             <Route path="/join" element={<Join />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

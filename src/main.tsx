@@ -3,11 +3,14 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import Shell from './Shell';
 import { ThemeProvider } from './themes/ThemeContext';
+import { ModeProvider } from './themes/ModeContext';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <Shell />
+      <ModeProvider>
+        <Shell />
+      </ModeProvider>
     </ThemeProvider>
   </StrictMode>,
 );

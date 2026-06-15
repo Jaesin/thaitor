@@ -1,12 +1,32 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getPhrasebook, putPhrase, seedPhrasebook, type PhrasebookEntry } from '../data/store';
+import { tts } from '../worker/api';
+import { VOICE_NAME, getDefaultVoice } from '../worker/voice';
+import { getCachedAudio, setCachedAudio } from '../data/audioCache';
 import styles from './Deck.module.css';
 
 const ALL = 'All';
 
+type Particle = 'khrap' | 'kha' | 'neutral';
+
+function voiceForParticle(particle: Particle): string {
+  if (particle === 'khrap') return VOICE_NAME.male;
+  if (particle === 'kha') return VOICE_NAME.female;
+  return VOICE_NAME[getDefaultVoice()];
+}
+
+function decodeAudio(audioContent: string): string {
+  const binary = atob(audioContent);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], { type: 'audio/mpeg' });
+  return URL.createObjectURL(blob);
+}
+
 const Deck: React.FC = () => {
   const [phrases, setPhrases] = useState<PhrasebookEntry[]>([]);
   const [category, setCategory] = useState<string>(ALL);
+  const [playingId, setPlayingId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -40,15 +60,39 @@ const Deck: React.FC = () => {
     await putPhrase(next);
   };
 
-  const speak = (entry: PhrasebookEntry) => {
+  const speakFallback = (text: string) => {
     try {
-      const text = entry.syllables.map((s) => s.th).join('');
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'th-TH';
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
     } catch {
       /* unavailable */
+    }
+  };
+
+  const speak = async (entry: PhrasebookEntry) => {
+    const text = entry.syllables.map((s) => s.th).join('');
+    const voice = voiceForParticle(entry.particle);
+    setPlayingId(entry.id);
+    try {
+      let audioContent = await getCachedAudio(text, voice);
+      if (!audioContent) {
+        audioContent = (await tts({ text, voice })).audioContent;
+        await setCachedAudio(text, voice, audioContent);
+      }
+      const url = decodeAudio(audioContent);
+      const audio = new Audio(url);
+      const cleanup = () => {
+        URL.revokeObjectURL(url);
+        setPlayingId((id) => (id === entry.id ? null : id));
+      };
+      audio.addEventListener('ended', cleanup);
+      audio.addEventListener('error', cleanup);
+      await audio.play();
+    } catch {
+      speakFallback(text);
+      setPlayingId((id) => (id === entry.id ? null : id));
     }
   };
 
@@ -102,7 +146,13 @@ const Deck: React.FC = () => {
               {p.rtgs && <div className={styles.roman}>{p.rtgs}</div>}
               <div className={styles.gloss}>{p.en}</div>
 
-              <button type="button" className={styles.playBtn} onClick={() => speak(p)}>
+              <button
+                type="button"
+                className={styles.playBtn}
+                onClick={() => speak(p)}
+                disabled={playingId === p.id}
+                aria-busy={playingId === p.id}
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     d="M5 4l13 8-13 8z"
@@ -112,7 +162,7 @@ const Deck: React.FC = () => {
                     strokeLinejoin="round"
                   />
                 </svg>
-                Play
+                {playingId === p.id ? 'Playing…' : 'Play'}
               </button>
             </li>
           ))}

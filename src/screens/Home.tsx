@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { TONE, type ToneKey } from '../themes/constants';
 import { THEMES, type ThemeKey } from '../themes/tokens';
 import { useTheme } from '../themes/ThemeContext';
+import { useMode, type AppMode } from '../themes/ModeContext';
 import { tts } from '../worker/api';
 import styles from './Home.module.css';
 
@@ -28,6 +29,12 @@ const PHRASE_OF_THE_DAY: Phrase = {
   literal: 'A polite greeting — said by men.',
 };
 
+const MODE_ORDER: AppMode[] = ['travel', 'learn'];
+const MODE_LABEL: Record<AppMode, string> = {
+  travel: 'Travel ✈',
+  learn: 'Learn 📖',
+};
+
 const THEME_ORDER: ThemeKey[] = ['paper', 'temple', 'market'];
 const THEME_LABEL: Record<ThemeKey, string> = {
   paper: 'Paper',
@@ -47,6 +54,7 @@ const PHRASE_THAI = PHRASE_OF_THE_DAY.syllables.map((s) => s.thai).join('');
 
 const Home: React.FC = () => {
   const { themeKey, setTheme } = useTheme();
+  const { mode, setMode } = useMode();
   const [speakState, setSpeakState] = useState<'idle' | 'loading' | 'playing'>('idle');
   const [audioReady, setAudioReady] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -137,18 +145,33 @@ const Home: React.FC = () => {
             Today <span className={styles.titleThai}>วันนี้</span>
           </h1>
         </div>
-        <div className={styles.themeSwitch} role="group" aria-label="Theme">
-          {THEME_ORDER.map((key) => (
-            <button
-              key={key}
-              type="button"
-              className={`${styles.themeDot} ${key === themeKey ? styles.themeDotActive : ''}`}
-              style={{ background: THEMES[key].accent }}
-              aria-label={THEME_LABEL[key]}
-              aria-pressed={key === themeKey}
-              onClick={() => setTheme(key)}
-            />
-          ))}
+        <div className={styles.headerControls}>
+          <div className={styles.modeSwitch} role="group" aria-label="Mode">
+            {MODE_ORDER.map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={`${styles.modePill} ${m === mode ? styles.modePillActive : ''}`}
+                aria-pressed={m === mode}
+                onClick={() => setMode(m)}
+              >
+                {MODE_LABEL[m]}
+              </button>
+            ))}
+          </div>
+          <div className={styles.themeSwitch} role="group" aria-label="Theme">
+            {THEME_ORDER.map((key) => (
+              <button
+                key={key}
+                type="button"
+                className={`${styles.themeDot} ${key === themeKey ? styles.themeDotActive : ''}`}
+                style={{ background: THEMES[key].accent }}
+                aria-label={THEME_LABEL[key]}
+                aria-pressed={key === themeKey}
+                onClick={() => setTheme(key)}
+              />
+            ))}
+          </div>
         </div>
       </header>
 

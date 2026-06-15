@@ -76,6 +76,42 @@
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--accent);
 }
 
+/* mode toggle */
+.headerControls {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.modeSwitch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--hair);
+}
+
+.modePill {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.modePillActive {
+  opacity: 1;
+  background: var(--accent);
+  color: var(--bg);
+}
+
 /* ---- phrase of the day ---- */
 .phraseCard {
   position: relative;
