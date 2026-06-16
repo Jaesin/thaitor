@@ -1,0 +1,9 @@
+.mascot {
+  color: var(--accent, #6c8cff);
+  display: block;
+}
+
+.center {
+  margin-left: auto;
+  margin-right: auto;
+}

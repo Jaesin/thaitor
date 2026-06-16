@@ -8,9 +8,14 @@ import {
   initSRS,
   putSRSRecord,
   getSRSRecord,
+  getStage,
   type PhrasebookEntry,
   type SRSRecord,
+  type Stage,
 } from '../data/store';
+
+// Max phrases worked through in a single session.
+const SESSION_CAP = 10;
 import { buildSession, gradePhrase, type Grade, type SessionResult } from '../data/srs';
 import { BUILT_IN_PHRASES } from '../data/phrases';
 import { completeQuest } from '../data/quests';
@@ -71,6 +76,7 @@ type ExerciseProps = {
 
 const Exercise: React.FC<ExerciseProps> = ({ onDone }) => {
   const [item, setItem] = useState<ExerciseItem | null>(null);
+  const [phase, setPhase] = useState<'intro' | 'tiles'>('intro');
   const [filled, setFilled] = useState<Syllable[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [correct, setCorrect] = useState(false);
@@ -85,6 +91,7 @@ const Exercise: React.FC<ExerciseProps> = ({ onDone }) => {
   const correctCountRef = useRef(0);
   const reviewedRef = useRef(0);
   const masteredRef = useRef<Set<string>>(new Set());
+  const reviewedStagesRef = useRef<Stage[]>([]);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -139,6 +146,7 @@ const Exercise: React.FC<ExerciseProps> = ({ onDone }) => {
             reviewed: reviewedRef.current,
             masteredPhraseIds: [...masteredRef.current],
             correctCount: correctCountRef.current,
+            reviewedStages: [...reviewedStagesRef.current],
           });
           return;
         }
@@ -150,6 +158,7 @@ const Exercise: React.FC<ExerciseProps> = ({ onDone }) => {
       releaseAudio();
       const next = buildItem(phrase);
       setItem(next);
+      setPhase('intro');
       setFilled([]);
       setSubmitted(false);
       setCorrect(false);
@@ -183,7 +192,8 @@ const Exercise: React.FC<ExerciseProps> = ({ onDone }) => {
         queue.push({ id: pick.id, en: pick.en, syllables: pick.syllables });
       }
 
-      queueRef.current = queue;
+      // Cap the session so it feels finite — take at most SESSION_CAP phrases.
+      queueRef.current = queue.slice(0, SESSION_CAP);
       if (cancelled) return;
       setLoading(false);
       loadFromQueue(0);
@@ -240,6 +250,7 @@ const Exercise: React.FC<ExerciseProps> = ({ onDone }) => {
 
     reviewedRef.current += 1;
     if (allCorrect) correctCountRef.current += 1;
+    reviewedStagesRef.current.push(getStage(updatedRecord.repetitions));
     if (updatedRecord.repetitions >= 3) masteredRef.current.add(item.phraseId);
 
     setCorrect(allCorrect);
@@ -334,6 +345,32 @@ const Exercise: React.FC<ExerciseProps> = ({ onDone }) => {
         <section className={styles.doneCard}>
           <p className={styles.doneTitle}>Session complete</p>
           <p className={styles.doneSub}>You worked through every phrase. Come back later for more.</p>
+        </section>
+      ) : item && phase === 'intro' ? (
+        <section className={styles.introCard} aria-label="Listen first">
+          <span className={styles.introLabel}>Listen first</span>
+          <p className={styles.introThai} lang="th">
+            {item.answer.map((s) => s.th).join('')}
+          </p>
+          <p className={styles.introRom}>{item.answer.map((s) => s.rom).join(' ')}</p>
+          <p className={styles.introGloss}>{item.prompt}</p>
+          <button
+            type="button"
+            className={`${styles.playBtn} ${styles.introPlayBtn} ${playing ? styles.playBtnPlaying : ''}`}
+            onClick={handlePlay}
+            aria-label={playing ? 'Stop audio' : 'Play audio'}
+          >
+            <span className={styles.eq} aria-hidden="true" data-playing={playing || undefined}>
+              <span />
+              <span />
+              <span />
+              <span />
+            </span>
+            {playing ? 'Stop' : 'Listen'}
+          </button>
+          <button type="button" className={styles.readyBtn} onClick={() => setPhase('tiles')}>
+            Ready
+          </button>
         </section>
       ) : item ? (
         <>

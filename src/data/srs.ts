@@ -1,4 +1,4 @@
-import { getPhrasebook, getDueNow, getAllSRSRecords, type SRSRecord } from './store';
+import { getPhrasebook, getDueNow, getAllSRSRecords, getStage, type SRSRecord } from './store';
 
 // Grade: 0-5 scale (Anki-style). 0-2 = fail, 3-5 = pass
 export type Grade = 0 | 1 | 2 | 3 | 4 | 5;
@@ -27,6 +27,7 @@ export function gradePhrase(record: SRSRecord, grade: Grade): SRSRecord {
     interval,
     easeFactor,
     repetitions,
+    stage: getStage(repetitions),
     dueAt: new Date(now + interval * 86400000).toISOString(),
     lastReviewedAt: new Date().toISOString(),
   };
@@ -36,6 +37,10 @@ export type SessionResult = {
   reviewed: number;
   masteredPhraseIds: string[]; // phraseIds where SRS repetitions >= 3 after this session
   correctCount: number;
+  // Growth stage reached for each reviewed phrase (in review order).
+  reviewedStages?: import('./store').Stage[];
+  // XP awarded for this session (populated by the progression system).
+  xpEarned?: number;
 };
 
 export type SessionMakeup = {

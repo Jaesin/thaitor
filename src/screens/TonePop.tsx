@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { TONE, TONE_ORDER, type ToneKey } from '../themes/constants';
+import { CLASS, TONE, TONE_ORDER, type ToneKey } from '../themes/constants';
 import { tts, type Syllable } from '../worker/api';
 import { getCachedAudio, setCachedAudio } from '../data/audioCache';
 import { BUILT_IN_PHRASES } from '../data/phrases';
 import { getDefaultVoice, VOICE_NAME } from '../worker/voice';
 import type { SessionResult } from '../data/srs';
+import { gradePhrase, type Grade } from '../data/srs';
+import { initSRS, getSRSRecord, putSRSRecord, type SRSRecord } from '../data/store';
 import { completeQuest } from '../data/quests';
 import styles from './TonePop.module.css';
 
@@ -73,11 +75,19 @@ function buildRounds(): Round[] {
   return shuffle(picked).slice(0, ROUND_COUNT);
 }
 
+export type TonePopMode = 'hear' | 'read';
+
 type TonePopProps = {
   onDone?: (result: SessionResult) => void;
+  kidMode?: boolean;
+  // 'hear' (default): listen to a syllable, pick the tone.
+  // 'read': see the written syllable (no auto audio), predict the tone from
+  // its spelling, then reveal the answer + play the audio.
+  mode?: TonePopMode;
 };
 
-const TonePop: React.FC<TonePopProps> = ({ onDone }) => {
+const TonePop: React.FC<TonePopProps> = ({ onDone, kidMode = false, mode = 'hear' }) => {
+  const isRead = mode === 'read';
   const [rounds, setRounds] = useState<Round[]>([]);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<ToneKey | null>(null);
@@ -89,6 +99,9 @@ const TonePop: React.FC<TonePopProps> = ({ onDone }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const prefetchIdRef = useRef(0);
   const correctCountRef = useRef(0);
+  // Per-tone grades collected during the round; persisted on finish so the
+  // "all 5 tones cleared" badge can be earned (one SRS record per tone).
+  const gradedRef = useRef<Array<{ tone: ToneKey; grade: Grade }>>([]);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
@@ -136,6 +149,7 @@ const TonePop: React.FC<TonePopProps> = ({ onDone }) => {
     setPicked(null);
     setCorrectCount(0);
     correctCountRef.current = 0;
+    gradedRef.current = [];
     setDone(false);
     if (next[0]) prefetchAudio(next[0].syllable);
   }, [prefetchAudio, releaseAudio]);
@@ -187,7 +201,10 @@ const TonePop: React.FC<TonePopProps> = ({ onDone }) => {
   const current = rounds[index];
 
   // Auto-play whenever audio becomes ready for the current (unanswered) round.
+  // In 'read' mode the player predicts the tone from spelling first, so we do
+  // not auto-play until they have answered.
   useEffect(() => {
+    if (isRead) return;
     if (!current || done || picked !== null || !audioUrl) return;
     playAudio(current.syllable.th);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -196,9 +213,36 @@ const TonePop: React.FC<TonePopProps> = ({ onDone }) => {
   function handlePick(tone: ToneKey) {
     if (!current || picked !== null) return;
     setPicked(tone);
-    if (tone === current.syllable.tone) {
+    const isCorrect = tone === current.syllable.tone;
+    // Grade the *answered* tone so a correct identification clears that tone.
+    gradedRef.current.push({
+      tone: current.syllable.tone,
+      grade: isCorrect ? 5 : 2,
+    });
+    if (isCorrect) {
       correctCountRef.current += 1;
       setCorrectCount((c) => c + 1);
+    }
+    // In 'read' mode the answer reveal is also the first time we play audio.
+    if (isRead) playAudio(current.syllable.th);
+  }
+
+  // Persist one SRS record per graded tone so the "all 5 tones" badge can fire.
+  async function persistToneGrades() {
+    for (const { tone, grade } of gradedRef.current) {
+      const phraseId = `tonepop-${tone}`;
+      await initSRS(phraseId);
+      const record =
+        (await getSRSRecord(phraseId)) ??
+        ({
+          phraseId,
+          interval: 1,
+          dueAt: new Date().toISOString(),
+          easeFactor: 2.5,
+          repetitions: 0,
+          createdAt: new Date().toISOString(),
+        } satisfies SRSRecord);
+      await putSRSRecord(gradePhrase(record, grade));
     }
   }
 
@@ -207,6 +251,7 @@ const TonePop: React.FC<TonePopProps> = ({ onDone }) => {
     releaseAudio();
     if (nextIndex >= rounds.length) {
       completeQuest('arcade');
+      void persistToneGrades();
       if (onDoneRef.current) {
         onDoneRef.current({
           reviewed: ROUND_COUNT,
@@ -229,7 +274,8 @@ const TonePop: React.FC<TonePopProps> = ({ onDone }) => {
       <header className={styles.header}>
         <span className={styles.eyebrow}>Arcade</span>
         <h1 className={styles.title}>
-          Tone Pop <span className={styles.titleThai}>วรรณยุกต์</span>
+          {isRead ? 'Read the Tone' : 'Tone Pop'}{' '}
+          <span className={styles.titleThai}>วรรณยุกต์</span>
         </h1>
         <div className={styles.progressDots} aria-label="Round progress">
           {rounds.map((_, i) => (
@@ -257,29 +303,78 @@ const TonePop: React.FC<TonePopProps> = ({ onDone }) => {
         </section>
       ) : current ? (
         <>
-          <button
-            type="button"
-            className={`${styles.hearBtn} ${audioPlaying ? styles.hearBtnPlaying : ''}`}
-            onClick={() => playAudio(current.syllable.th)}
-            aria-label="Hear the syllable"
+          {isRead ? (
+            <section className={styles.syllableCard} aria-label="Syllable to read">
+              <span
+                className={styles.syllableTh}
+                lang="th"
+                style={{ color: CLASS[current.syllable.cls].ink }}
+              >
+                {current.syllable.th}
+              </span>
+              <span
+                className={styles.classTag}
+                style={
+                  {
+                    '--class-base': CLASS[current.syllable.cls].base,
+                    '--class-soft': CLASS[current.syllable.cls].soft,
+                    '--class-ink': CLASS[current.syllable.cls].ink,
+                  } as React.CSSProperties
+                }
+              >
+                {CLASS[current.syllable.cls].name} class
+              </span>
+              {picked !== null && (
+                <button
+                  type="button"
+                  className={`${styles.hearBtn} ${audioPlaying ? styles.hearBtnPlaying : ''}`}
+                  onClick={() => playAudio(current.syllable.th)}
+                  aria-label="Hear the syllable"
+                >
+                  <span
+                    className={styles.eq}
+                    aria-hidden="true"
+                    data-playing={audioPlaying || undefined}
+                  >
+                    <span />
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                  Hear it
+                </button>
+              )}
+            </section>
+          ) : (
+            <button
+              type="button"
+              className={`${styles.hearBtn} ${audioPlaying ? styles.hearBtnPlaying : ''}`}
+              onClick={() => playAudio(current.syllable.th)}
+              aria-label="Hear the syllable"
+            >
+              <span className={styles.eq} aria-hidden="true" data-playing={audioPlaying || undefined}>
+                <span />
+                <span />
+                <span />
+                <span />
+              </span>
+              {picked !== null ? 'Hear again' : 'Listen'}
+            </button>
+          )}
+
+          <p className={styles.prompt}>
+            {isRead ? 'What tone does the spelling give?' : 'Which tone did you hear?'}
+          </p>
+
+          <section
+            className={`${styles.options} ${kidMode ? styles.optionsKid : ''}`}
+            aria-label="Tone options"
           >
-            <span className={styles.eq} aria-hidden="true" data-playing={audioPlaying || undefined}>
-              <span />
-              <span />
-              <span />
-              <span />
-            </span>
-            {picked !== null ? 'Hear again' : 'Listen'}
-          </button>
-
-          <p className={styles.prompt}>Which tone did you hear?</p>
-
-          <section className={styles.options} aria-label="Tone options">
             {TONE_ORDER.map((tone) => {
               const revealed = picked !== null;
               const isAnswer = tone === current.syllable.tone;
               const isPicked = tone === picked;
-              let cls = styles.optionBtn;
+              let cls = `${styles.optionBtn} ${kidMode ? styles.kidMode : ''}`;
               if (revealed && isAnswer) cls = `${cls} ${styles.optionBtnCorrect}`;
               else if (revealed && isPicked) cls = `${cls} ${styles.optionBtnWrong}`;
               return (

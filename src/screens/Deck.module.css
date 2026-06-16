@@ -13,9 +13,11 @@
 }
 
 .header {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-right: 48px;
 }
 
 .eyebrow {
@@ -38,6 +40,36 @@
 .titleThai {
   font-family: var(--thaiDisplay, var(--thai));
   color: var(--accent);
+}
+
+/* ---- segment control ---- */
+.segment {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.segmentBtn {
+  flex: 1 1 0;
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.segmentBtnActive {
+  color: var(--bg);
+  background: var(--accent);
 }
 
 /* ---- category filters ---- */
@@ -142,12 +174,18 @@
   color: var(--ink);
 }
 
-.playBtn {
-  align-self: flex-start;
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.playBtn,
+.practiceBtn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 6px;
   font-family: var(--ui);
   font-size: 13px;
   font-weight: 600;
@@ -157,6 +195,191 @@
   border-radius: 999px;
   padding: 8px 16px;
   cursor: pointer;
+}
+
+.practiceBtn {
+  color: var(--ink);
+  background: transparent;
+  text-decoration: none;
+}
+
+/* ---- recent rows ---- */
+.recentRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  padding: 14px 16px;
+  box-shadow: 0 1px 0 var(--hair2), 0 18px 40px -28px rgba(0, 0, 0, 0.5);
+}
+
+.recentText {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.recentThai {
+  font-family: var(--thaiDisplay, var(--thai));
+  font-size: 22px;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.recentRoman {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.recentEn {
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.recentPlayBtn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accentInk);
+  background: var(--accentSoft);
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+
+.recentPlayBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- field-badge bottom sheet ---- */
+.sheetOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: sheetFade 0.18s ease;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  border: 1px solid var(--hair);
+  border-bottom: none;
+  padding: 18px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -18px 50px -20px rgba(0, 0, 0, 0.55);
+  animation: sheetUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sheetHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sheetTitle {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sheetSub {
+  font-family: var(--thaiDisplay, var(--thai));
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.sheetClose {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.badgeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.badgeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  border-radius: 16px;
+  border: 1px solid var(--hair);
+  background: var(--surface);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.badgeBtnEarned {
+  border-color: var(--accent);
+  background: var(--accentSoft);
+}
+
+.badgeEmoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.badgeLabel {
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.badgeEarned {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accentInk);
+}
+
+@keyframes sheetFade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
 }
 
 /* ---- empty ---- */

@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { TONE, type ToneKey } from '../themes/constants';
-import { THEMES, type ThemeKey } from '../themes/tokens';
-import { useTheme } from '../themes/ThemeContext';
-import { useMode, type AppMode } from '../themes/ModeContext';
 import { tts } from '../worker/api';
 import { getDailyProgress, completeQuest } from '../data/quests';
 import { getDueNow, getAllSRSRecords } from '../data/store';
 import { BUILT_IN_PHRASES } from '../data/phrases';
+import { getStreak, getTotalXP, getRank } from '../data/progression';
+import { getKidMode } from '../data/profiles';
+import { getFamilyFlameState, type FamilyFlameState } from '../data/family';
+import GearLink from '../components/GearLink';
+import MascotElephant from '../components/MascotElephant';
+import mascotStyles from '../components/MascotElephant.module.css';
 import styles from './Home.module.css';
 
 interface Syllable {
@@ -36,19 +39,6 @@ function getPhraseOfTheDay(): Phrase {
 
 const PHRASE_OF_THE_DAY = getPhraseOfTheDay();
 
-const MODE_ORDER: AppMode[] = ['travel', 'learn'];
-const MODE_LABEL: Record<AppMode, string> = {
-  travel: 'Travel ✈',
-  learn: 'Learn 📖',
-};
-
-const THEME_ORDER: ThemeKey[] = ['paper', 'temple', 'market'];
-const THEME_LABEL: Record<ThemeKey, string> = {
-  paper: 'Paper',
-  temple: 'Temple Gold',
-  market: 'Night Market',
-};
-
 function ToneGlyph({ tone }: { tone: ToneKey }) {
   return (
     <svg className={styles.toneGlyph} viewBox="0 0 48 40" aria-hidden="true">
@@ -59,12 +49,58 @@ function ToneGlyph({ tone }: { tone: ToneKey }) {
 
 const PHRASE_THAI = PHRASE_OF_THE_DAY.syllables.map((s) => s.thai).join('');
 
+type TripStatus =
+  | { kind: 'none' }
+  | { kind: 'before'; days: number }
+  | { kind: 'during' }
+  | { kind: 'after' };
+
+// Whole days between two local calendar days (b - a).
+function daysBetween(a: Date, b: Date): number {
+  const aMid = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
+  const bMid = new Date(b.getFullYear(), b.getMonth(), b.getDate()).getTime();
+  return Math.round((bMid - aMid) / 86400000);
+}
+
+function getTripStatus(): TripStatus {
+  let departure: string | null = null;
+  let ret: string | null = null;
+  try {
+    departure = localStorage.getItem('thaitor_trip_departure');
+    ret = localStorage.getItem('thaitor_trip_return');
+  } catch {
+    // ignore storage failures
+  }
+
+  if (!departure) return { kind: 'none' };
+
+  const today = new Date();
+  const dep = new Date(`${departure}T00:00:00`);
+  if (Number.isNaN(dep.getTime())) return { kind: 'none' };
+
+  const toDep = daysBetween(today, dep);
+  if (toDep > 0) return { kind: 'before', days: toDep };
+
+  // Departure is today or in the past. Check return.
+  if (ret) {
+    const rt = new Date(`${ret}T00:00:00`);
+    if (!Number.isNaN(rt.getTime())) {
+      const toRet = daysBetween(today, rt);
+      if (toRet < 0) return { kind: 'after' };
+    }
+  }
+  return { kind: 'during' };
+}
+
 const Home: React.FC = () => {
-  const { themeKey, setTheme } = useTheme();
-  const { mode, setMode } = useMode();
   const [speakState, setSpeakState] = useState<'idle' | 'loading' | 'playing'>('idle');
   const [audioReady, setAudioReady] = useState(false);
   const [quests, setQuests] = useState(() => getDailyProgress());
+  const [tripStatus] = useState<TripStatus>(() => getTripStatus());
+  const [streak] = useState(() => getStreak());
+  const [rank] = useState(() => getRank(getTotalXP()));
+  const [kidMode] = useState(() => getKidMode());
+  const [family, setFamily] = useState<FamilyFlameState | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const cachedAudioUrl = useRef<string | null>(null);
 
@@ -107,6 +143,16 @@ const Home: React.FC = () => {
       // "done" = records that are NOT due (already reviewed today or future intervals)
       setReviewsDone(all.length - due.length);
     })();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    getFamilyFlameState().then((state) => {
+      if (active) setFamily(state);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const pct = reviewsTotal === 0 ? 0 : reviewsDone / reviewsTotal;
@@ -161,41 +207,94 @@ const Home: React.FC = () => {
   return (
     <div className={styles.screen}>
       <header className={styles.header}>
-        <div className={styles.greeting}>
-          <span className={styles.eyebrow}>Sawatdee, family</span>
-          <h1 className={styles.title}>
-            Today <span className={styles.titleThai}>วันนี้</span>
-          </h1>
-        </div>
-        <div className={styles.headerControls}>
-          <div className={styles.modeSwitch} role="group" aria-label="Mode">
-            {MODE_ORDER.map((m) => (
-              <button
-                key={m}
-                type="button"
-                className={`${styles.modePill} ${m === mode ? styles.modePillActive : ''}`}
-                aria-pressed={m === mode}
-                onClick={() => setMode(m)}
-              >
-                {MODE_LABEL[m]}
-              </button>
-            ))}
-          </div>
-          <div className={styles.themeSwitch} role="group" aria-label="Theme">
-            {THEME_ORDER.map((key) => (
-              <button
-                key={key}
-                type="button"
-                className={`${styles.themeDot} ${key === themeKey ? styles.themeDotActive : ''}`}
-                style={{ background: THEMES[key].accent }}
-                aria-label={THEME_LABEL[key]}
-                aria-pressed={key === themeKey}
-                onClick={() => setTheme(key)}
-              />
-            ))}
+        <div className={styles.greetingRow}>
+          <MascotElephant
+            size={56}
+            mood="happy"
+            className={mascotStyles.mascot}
+          />
+          <div className={styles.greeting}>
+            <span className={styles.eyebrow}>Sawatdee, family</span>
+            <h1 className={styles.title}>
+              Today <span className={styles.titleThai}>วันนี้</span>
+            </h1>
+            <div className={styles.statusLine}>
+              <span className={styles.statusItem}>
+                {streak.count > 0 ? (
+                  <>
+                    🔥 <strong>{streak.count}</strong> day streak
+                  </>
+                ) : (
+                  '🔥 Start your streak!'
+                )}
+              </span>
+              <span className={styles.statusDot} aria-hidden="true">
+                ·
+              </span>
+              <span className={styles.statusItem} lang="th">
+                {rank.thai}
+              </span>
+            </div>
           </div>
         </div>
+        <GearLink />
       </header>
+
+      {family && family.members.length >= 2 && (
+        <section
+          className={`${styles.familyFlame} ${
+            family.allPracticedToday ? styles.familyFlameLit : ''
+          }`}
+          aria-label="Family flame"
+        >
+          <span className={styles.familyFlameIcon} aria-hidden="true">
+            🔥
+          </span>
+          <span className={styles.familyChips}>
+            {family.members.map((m) => (
+              <span
+                key={m.id}
+                className={`${styles.familyChip} ${
+                  m.practicedToday ? styles.familyChipOn : styles.familyChipOff
+                }`}
+                title={`${m.name} ${m.practicedToday ? '✓' : '…'}`}
+              >
+                {m.emoji}
+              </span>
+            ))}
+          </span>
+          <span className={styles.familyLabel}>
+            {family.allPracticedToday
+              ? 'All in today! 🔥'
+              : `Family flame · day ${family.flameDays}`}
+          </span>
+        </section>
+      )}
+
+      {tripStatus.kind === 'before' && (
+        <a className={styles.tripBanner} href="#/translate">
+          <span className={styles.tripText}>
+            <strong>{tripStatus.days}</strong>{' '}
+            {tripStatus.days === 1 ? 'day' : 'days'} until Thailand 🇹🇭
+          </span>
+        </a>
+      )}
+      {tripStatus.kind === 'during' && (
+        <a className={`${styles.tripBanner} ${styles.tripBannerActive}`} href="#/translate">
+          <span className={styles.tripText}>You&apos;re in Thailand! 🇹🇭</span>
+          <span className={styles.tripCta}>Use Translate →</span>
+        </a>
+      )}
+      {tripStatus.kind === 'after' && (
+        <div className={`${styles.tripBanner} ${styles.tripBannerSubtle}`}>
+          <span className={styles.tripText}>Welcome home from Thailand 🏠</span>
+        </div>
+      )}
+      {tripStatus.kind === 'none' && (
+        <a className={styles.tripHint} href="#/settings">
+          Set your trip dates →
+        </a>
+      )}
 
       <section className={styles.phraseCard} aria-label="Phrase of the day">
         <div className={styles.phraseGlow} />
@@ -265,6 +364,16 @@ const Home: React.FC = () => {
           <span className={styles.modeDesc}>Script, tones and phrases that stick, one card at a time.</span>
         </a>
       </nav>
+
+      {kidMode && (
+        <a className={styles.kidCard} href="#/play" aria-label="Kid Play — tap to practice tones">
+          <span className={styles.kidEmoji} aria-hidden="true">🐘</span>
+          <span className={styles.kidText}>
+            <span className={styles.kidTitle}>Kid Play</span>
+            <span className={styles.kidSub}>Tap to practice tones!</span>
+          </span>
+        </a>
+      )}
 
       <section className={styles.progress} aria-label="Today's reviews">
         <svg className={styles.ring} width="56" height="56" viewBox="0 0 56 56">

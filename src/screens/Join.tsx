@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMember } from '../auth/useMember';
+import MascotElephant from '../components/MascotElephant';
+import mascotStyles from '../components/MascotElephant.module.css';
 import styles from './Join.module.css';
 
 /** Extract the `key` query param from a hash route like `#/join?key=TOKEN`. */
@@ -63,6 +65,11 @@ const Join: React.FC = () => {
 
   return (
     <div className={styles.screen}>
+      <MascotElephant
+        size={100}
+        mood="waving"
+        className={`${mascotStyles.mascot} ${mascotStyles.center}`}
+      />
       <span className={styles.eyebrow}>Join</span>
       <h1 className={styles.title}>Join Thaitor</h1>
       <form className={styles.card} onSubmit={onSubmit}>

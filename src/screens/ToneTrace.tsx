@@ -4,6 +4,7 @@ import { tts, type Syllable } from '../worker/api';
 import { getCachedAudio, setCachedAudio } from '../data/audioCache';
 import { BUILT_IN_PHRASES } from '../data/phrases';
 import { getDefaultVoice, VOICE_NAME } from '../worker/voice';
+import GearLink from '../components/GearLink';
 import styles from './ToneTrace.module.css';
 
 type RecordingState = 'idle' | 'recording' | 'done';
@@ -85,6 +86,14 @@ function decodeAudio(audioContent: string): string {
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   const blob = new Blob([bytes], { type: 'audio/mpeg' });
   return URL.createObjectURL(blob);
+}
+
+function ToneGlyph({ tone }: { tone: ToneKey }) {
+  return (
+    <svg className={styles.toneGlyph} viewBox="0 0 48 40" aria-hidden="true">
+      <path d={TONE[tone].d} />
+    </svg>
+  );
 }
 
 function pickRandomSyllable(): TargetSyllable {
@@ -351,13 +360,15 @@ const ToneTrace: React.FC = () => {
   return (
     <div className={styles.screen}>
       <header className={styles.header}>
-        <span className={styles.eyebrow}>Speaking lab</span>
+        <span className={styles.eyebrow}>A mirror · no score</span>
+        <ToneGlyph tone={tone} />
         <p className={styles.thai} lang="th">
           {syllable.th}
         </p>
         <p className={styles.rom}>
           {syllable.rom} · {TONE[tone].label} tone
         </p>
+        <GearLink />
       </header>
 
       <div className={styles.pitchStaff}>
@@ -413,14 +424,14 @@ const ToneTrace: React.FC = () => {
                 className={styles.assessClose}
                 onClick={() => setSelfAssess('close')}
               >
-                Felt close
+                Yes, close
               </button>
               <button
                 type="button"
                 className={styles.assessNot}
                 onClick={() => setSelfAssess('not')}
               >
-                Not quite
+                Not yet
               </button>
             </div>
           ) : (

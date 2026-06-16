@@ -165,6 +165,136 @@
   text-transform: uppercase;
 }
 
+.themeRow {
+  display: flex;
+  gap: 8px;
+}
+
+.themeBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ui);
+  color: var(--muted);
+  background: var(--raise, var(--bg));
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  padding: 12px 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.themeBtnActive {
+  color: var(--accentInk);
+  background: var(--accentSoft);
+  border-color: var(--accent);
+}
+
+.themeSwatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+}
+
+.themeName {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.choiceRow {
+  display: flex;
+  gap: 8px;
+}
+
+.choiceBtn {
+  flex: 1;
+  font-family: var(--ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--raise, var(--bg));
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  padding: 12px 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.choiceBtnActive {
+  color: var(--accentInk);
+  background: var(--accentSoft);
+  border-color: var(--accent);
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toggleLabel {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.switch {
+  flex-shrink: 0;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+  background: var(--raise, var(--bg));
+  padding: 2px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.switchOn {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.switchKnob {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.switchOn .switchKnob {
+  transform: translateX(20px);
+}
+
+.dateInput {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--raise, var(--bg));
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  padding: 10px 14px;
+  outline: none;
+  width: 100%;
+  margin-top: 4px;
+  color-scheme: light dark;
+}
+
+.dateInput:focus {
+  border-color: var(--accent);
+}
+
 .inviteOut {
   display: flex;
   flex-direction: column;
@@ -192,4 +322,187 @@
   color: var(--accentInk);
   font-weight: 600;
   text-decoration: none;
+}
+
+/* ---- badges ---- */
+.badgeList {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.badgeItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background: var(--surface);
+}
+
+.badgeItemEmoji {
+  font-size: 22px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.badgeItemText {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.badgeItemLabel {
+  font-family: var(--ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.badgeItemSub {
+  font-family: var(--ui);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.badgeItemDate {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* --- Profiles ----------------------------------------------------------- */
+
+.profileGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.profileChip,
+.profileAdd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 76px;
+  padding: 12px 6px;
+  border-radius: 16px;
+  background: var(--raise, var(--bg));
+  border: 1px solid var(--hair);
+  cursor: pointer;
+  font-family: var(--ui);
+  transition: border-color 0.15s ease, background 0.15s ease;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.profileChipActive {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+  background: var(--accentSoft);
+}
+
+.profileAdd {
+  color: var(--muted);
+  border-style: dashed;
+}
+
+.profileEmoji {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.profileName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profileForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hair);
+}
+
+.emojiPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.emojiBtn {
+  font-size: 22px;
+  line-height: 1;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--raise, var(--bg));
+  border: 1px solid var(--hair);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.emojiBtnActive {
+  border-color: var(--accent);
+  background: var(--accentSoft);
+}
+
+.deleteConfirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--accentSoft);
+  border: 1px solid var(--accent);
+}
+
+.deleteText {
+  font-family: var(--display);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.linkBtn {
+  font-family: var(--ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 12px 8px;
+}
+
+.dangerBtn {
+  font-family: var(--ui);
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--danger, #c0392b);
+  border: 1px solid var(--danger, #c0392b);
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
 }

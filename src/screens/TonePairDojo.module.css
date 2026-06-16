@@ -36,8 +36,9 @@
 
 .progressDots {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-top: 4px;
+  flex-wrap: wrap;
 }
 
 .dot {
@@ -45,10 +46,17 @@
   height: 9px;
   border-radius: 50%;
   background: var(--hair);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.dotDone {
+  background: var(--accent);
+  opacity: 0.55;
 }
 
 .dotActive {
   background: var(--accent);
+  opacity: 1;
   transform: scale(1.15);
 }
 
@@ -113,34 +121,6 @@
   }
 }
 
-.syllableCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 24px 18px;
-  border-radius: 22px;
-  border: 1px solid var(--hair);
-  background: var(--surface);
-}
-
-.syllableTh {
-  font-family: var(--thai);
-  font-size: 72px;
-  line-height: 1;
-}
-
-.classTag {
-  font-family: var(--ui);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: 999px;
-  color: var(--class-ink, var(--ink));
-  background: var(--class-soft, var(--surface));
-  border: 1px solid var(--class-base, var(--hair));
-}
-
 .prompt {
   font-family: var(--display);
   font-size: 20px;
@@ -160,51 +140,45 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  flex: 1 1 28%;
-  min-width: 96px;
-  padding: 18px 10px;
+  gap: 6px;
+  flex: 1 1 40%;
+  min-width: 120px;
+  padding: 22px 12px;
   background: var(--surface);
   border: 2px solid var(--hair);
   border-radius: 18px;
   color: var(--ink);
   cursor: pointer;
-  transition: transform 0.08s ease, border-color 0.15s ease;
+  transition: transform 0.08s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
 .optionBtn:active {
   transform: scale(0.96);
 }
 
-/* ---- kid mode: larger tap targets (~30% bigger) ---- */
-.optionsKid {
-  gap: 16px;
-}
-
-.optionBtn.kidMode {
-  flex: 1 1 42%;
-  min-width: 130px;
-  padding: 26px 14px;
-  gap: 12px;
-  border-radius: 24px;
-}
-
-.optionBtn.kidMode .toneGlyph {
-  width: 40px;
-  height: 32px;
-}
-
-.optionBtn.kidMode .toneLabel {
-  font-size: 17px;
-}
-
 .optionBtn:disabled {
   cursor: default;
+}
+
+.optionThai {
+  font-family: var(--thai);
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.optionGloss {
+  font-family: var(--ui);
+  font-size: 13px;
+  color: var(--muted);
 }
 
 .optionBtnCorrect {
   border-color: oklch(0.7 0.16 150);
   background: oklch(0.7 0.16 150 / 0.1);
+  color: oklch(0.45 0.16 150);
+}
+
+.optionBtnCorrect .optionGloss {
   color: oklch(0.45 0.16 150);
 }
 
@@ -214,54 +188,45 @@
   color: oklch(0.5 0.2 25);
 }
 
-.toneGlyph {
-  width: 28px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.optionBtnWrong .optionGloss {
+  color: oklch(0.5 0.2 25);
 }
 
-.toneLabel {
-  font-family: var(--ui);
-  font-size: 13px;
-  font-weight: 600;
+.optionBtnMuted {
+  opacity: 0.5;
 }
 
-.revealCard {
+.feedback {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 22px 18px;
+  padding: 16px 18px;
   border-radius: 18px;
   border: 1px solid var(--hair);
   background: var(--surface);
   text-align: center;
 }
 
-.revealThai {
-  font-family: var(--thai);
-  font-size: 40px;
-  line-height: 1.1;
+.feedbackCorrect {
+  border-color: oklch(0.7 0.16 150 / 0.5);
+}
+
+.feedbackWrong {
+  border-color: oklch(0.62 0.2 25 / 0.5);
+}
+
+.feedbackText {
+  font-family: var(--ui);
+  font-size: 15px;
+  font-weight: 600;
   color: var(--ink);
   margin: 0;
 }
 
-.revealRom {
-  font-family: var(--mono);
-  font-size: 15px;
-  color: var(--accent);
-  margin: 0;
-}
-
-.revealGloss {
-  font-family: var(--ui);
-  font-size: 13px;
-  color: var(--muted);
-  margin: 0 0 8px;
+.feedbackText span[lang='th'] {
+  font-family: var(--thai);
+  font-size: 19px;
 }
 
 .nextBtn {

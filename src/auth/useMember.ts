@@ -46,12 +46,21 @@ function randomToken(length = 24): string {
   return out;
 }
 
+/** Hard cap on how long a join may take before we surface an error and let the
+ * user retry. With offline persistence `setDoc()` resolves only on server ack,
+ * so a stalled round-trip would otherwise hang the UI forever. */
+const JOIN_TIMEOUT_MS = 15_000;
+
 export function useMember(): UseMemberResult {
   const stored = readStored();
   const [status, setStatus] = useState<MemberStatus>('loading');
   const [uid, setUid] = useState<string | null>(stored?.uid ?? null);
   const [displayName, setDisplayName] = useState<string | null>(stored?.name ?? null);
   const uidRef = useRef<string | null>(uid);
+  // Resolved by the onSnapshot listener the moment members/{uid} appears (the
+  // local-cache write is effectively instant), so a join can complete without
+  // waiting for the slow server ack that setDoc() awaits.
+  const memberConfirmRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     let unsub: (() => void) | undefined;
@@ -75,6 +84,9 @@ export function useMember(): UseMemberResult {
             setDisplayName(name);
             setStatus('member');
             if (name) writeStored({ uid: user.uid, name });
+            // Membership is now visible (from the local cache, even before the
+            // server acks) — let any in-flight join() resolve immediately.
+            memberConfirmRef.current?.();
           } else {
             setStatus('public');
           }
@@ -97,18 +109,42 @@ export function useMember(): UseMemberResult {
     uidRef.current = user.uid;
     setUid(user.uid);
     setStatus('joining');
+
+    // The setDoc promise resolves only on server ack (offline persistence), so
+    // a slow/stalled round-trip could hang forever. Treat the join as done as
+    // soon as EITHER the server acks OR the onSnapshot listener sees the doc
+    // (the local-cache write lands instantly). Bound the whole thing with a
+    // timeout so a genuinely stuck write surfaces a retryable error.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const confirmed = new Promise<void>((resolve) => {
+      memberConfirmRef.current = resolve;
+    });
+    const timedOut = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error('Join timed out. Check your connection and try again.')),
+        JOIN_TIMEOUT_MS,
+      );
+    });
+
+    const write = setDoc(doc(db, 'members', user.uid), {
+      name,
+      inviteToken,
+      joinedAt: serverTimestamp(),
+    });
+    // Don't let an eventual rejection after we've already resolved go unhandled.
+    write.catch(() => {});
+
     try {
-      await setDoc(doc(db, 'members', user.uid), {
-        name,
-        inviteToken,
-        joinedAt: serverTimestamp(),
-      });
+      await Promise.race([Promise.race([write, confirmed]), timedOut]);
       writeStored({ uid: user.uid, name });
       setDisplayName(name);
       setStatus('member');
     } catch (err) {
       setStatus('public');
       throw err;
+    } finally {
+      if (timer) clearTimeout(timer);
+      memberConfirmRef.current = null;
     }
   }
 

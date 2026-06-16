@@ -18,3 +18,23 @@ export function getDefaultVoice(): DefaultVoice {
 export function setDefaultVoice(voice: DefaultVoice): void {
   localStorage.setItem(STORAGE_KEY, voice);
 }
+
+export type DefaultEnVoice = 'male' | 'male2' | 'female' | 'female2' | 'kid';
+
+export const EN_VOICE_NAME: Record<DefaultEnVoice, string> = {
+  male:    'en-GB-RyanNeural',
+  male2:   'en-US-KaiNeural',
+  female:  'en-US-LunaNeural',
+  female2: 'en-GB-OliviaNeural',
+  kid:     'en-GB-MaisieNeural',
+};
+
+const EN_VOICE_KEY = 'thaitor_default_en_voice';
+
+export function getDefaultEnVoice(): DefaultEnVoice {
+  return (localStorage.getItem(EN_VOICE_KEY) as DefaultEnVoice) || 'female';
+}
+
+export function setDefaultEnVoice(v: DefaultEnVoice): void {
+  localStorage.setItem(EN_VOICE_KEY, v);
+}

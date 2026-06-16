@@ -53,6 +53,48 @@
   color: var(--muted);
 }
 
+.encouragement {
+  font-family: var(--ui);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  text-align: center;
+}
+
+.stages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 22px;
+  border-radius: 16px;
+  border: 1px solid var(--hair);
+  background: var(--surface);
+  width: 100%;
+}
+
+.stageRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.stageEmoji {
+  display: inline-flex;
+}
+
+.stageLegend {
+  font-family: var(--ui);
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  text-align: center;
+}
+
 .bloom {
   display: flex;
   flex-direction: column;
@@ -110,6 +152,103 @@
   border-radius: 14px;
   padding: 14px 18px;
   cursor: pointer;
+}
+
+.xp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.xpEarned {
+  font-family: var(--ui);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+  margin: 0;
+}
+
+.rankUp {
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+}
+
+.rank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+}
+
+.rankThai {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.rankName {
+  font-family: var(--ui);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.rankProgress {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.badges {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.badgesLabel {
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+.badgeChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.badgeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accentInk);
+  background: var(--accentSoft);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.badgeChipEmoji {
+  font-size: 16px;
+  line-height: 1;
 }
 
 @keyframes bloom {

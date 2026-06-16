@@ -32,3 +32,18 @@ export async function ensureSignedIn(): Promise<User> {
   const cred = await signInAnonymously(auth);
   return cred.user;
 }
+
+// E2E-only seam: when VITE_E2E=1, expose the Firebase handles + the Firestore
+// helpers the live test suite needs to delete its own test data from prod after
+// a run. Never set in normal builds, so this is a no-op in production.
+if (import.meta.env.VITE_E2E === '1') {
+  void import('firebase/firestore').then(
+    ({ doc, deleteDoc, collection, getDocs, query, where }) => {
+      (window as unknown as { __thaitorE2E?: unknown }).__thaitorE2E = {
+        auth,
+        db,
+        fs: { doc, deleteDoc, collection, getDocs, query, where },
+      };
+    },
+  );
+}

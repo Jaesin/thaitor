@@ -1,0 +1,224 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 18px 32px;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eyebrow {
+  font-family: var(--ui);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.title {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.titleThai {
+  font-family: var(--thai);
+  color: var(--accent);
+}
+
+.rung {
+  font-family: var(--ui);
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.scoreboard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1 1 0;
+  padding: 12px 8px;
+  border-radius: 16px;
+  border: 2px solid var(--hair);
+  background: var(--surface);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.playerActive {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px oklch(from var(--accent) l c h / 0.18);
+}
+
+.playerName {
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.playerScore {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.turnPill {
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.gridKid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 3 / 4;
+  padding: 6px;
+  border-radius: 16px;
+  border: 2px solid var(--hair);
+  background: var(--surface);
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.card:active {
+  transform: scale(0.96);
+}
+
+.card:disabled {
+  cursor: default;
+}
+
+.cardUp {
+  background: var(--card-soft, var(--surface));
+  border-color: var(--card-base, var(--hair));
+}
+
+.cardMatched {
+  box-shadow: 0 0 0 3px oklch(0.7 0.16 150 / 0.25);
+  border-color: oklch(0.7 0.16 150);
+  opacity: 0.85;
+}
+
+.cardBack {
+  font-family: var(--thai);
+  font-size: 26px;
+  color: var(--hair);
+  opacity: 0.55;
+}
+
+.cardGlyph {
+  font-family: var(--thai);
+  font-size: 44px;
+  line-height: 1;
+  color: var(--card-ink, var(--ink));
+}
+
+.cardName {
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--card-ink, var(--ink));
+  word-break: break-word;
+}
+
+.doneCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 32px 22px;
+  border-radius: 18px;
+  border: 1px solid var(--hair);
+  background: var(--surface);
+  text-align: center;
+}
+
+.doneTitle {
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.doneSub {
+  font-family: var(--mono);
+  font-size: 18px;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.doneActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.nextBtn {
+  font-family: var(--ui);
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.ghostBtn {
+  font-family: var(--ui);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.note {
+  font-family: var(--ui);
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin: 0;
+}

@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { useMode } from './themes/ModeContext';
 import Home from './screens/Home';
 import Translate from './screens/Translate';
 import Exercise from './screens/Exercise';
+import AudioPick from './screens/AudioPick';
 import TonePop from './screens/TonePop';
+import TonePairDojo from './screens/TonePairDojo';
+import EchoBooth from './screens/EchoBooth';
+import ScriptLadder from './screens/ScriptLadder';
 import ToneTrace from './screens/ToneTrace';
 import SessionStart from './screens/SessionStart';
 import SessionSummary from './screens/SessionSummary';
@@ -12,14 +15,50 @@ import Deck from './screens/Deck';
 import Join from './screens/Join';
 import Settings from './screens/Settings';
 import { buildSession, type SessionMakeup, type SessionResult } from './data/srs';
+import {
+  listProfiles,
+  syncKidModeMirror,
+  applyActiveProfileVoices,
+  getKidMode,
+} from './data/profiles';
 import styles from './Shell.module.css';
 
-type PlayPhase = 'start' | 'build' | 'tonepop' | 'summary';
+type PlayPhase =
+  | 'start'
+  | 'listen'
+  | 'build'
+  | 'tonepop'
+  | 'readtone'
+  | 'dojo'
+  | 'echo'
+  | 'script'
+  | 'summary';
+
+const OfflineBanner: React.FC = () => {
+  const [offline, setOffline] = useState(!navigator.onLine);
+  useEffect(() => {
+    const up = () => setOffline(false);
+    const down = () => setOffline(true);
+    window.addEventListener('online', up);
+    window.addEventListener('offline', down);
+    return () => {
+      window.removeEventListener('online', up);
+      window.removeEventListener('offline', down);
+    };
+  }, []);
+  if (!offline) return null;
+  return (
+    <div className={styles.offlineBanner} role="status">
+      Offline — phrasebook and recent translations still work.
+    </div>
+  );
+};
 
 const PlayHub: React.FC = () => {
   const [phase, setPhase] = useState<PlayPhase>('start');
   const [makeup, setMakeup] = useState<SessionMakeup | null>(null);
   const [result, setResult] = useState<SessionResult | null>(null);
+  const [kidMode] = useState(() => getKidMode());
 
   useEffect(() => {
     let cancelled = false;
@@ -46,6 +85,17 @@ const PlayHub: React.FC = () => {
     );
   }
 
+  if (phase === 'listen') {
+    return (
+      <AudioPick
+        onDone={(r) => {
+          setResult(r);
+          setPhase('summary');
+        }}
+      />
+    );
+  }
+
   if (phase === 'build') {
     return (
       <Exercise
@@ -57,15 +107,37 @@ const PlayHub: React.FC = () => {
     );
   }
 
-  if (phase === 'tonepop') {
+  if (phase === 'tonepop' || phase === 'readtone') {
     return (
       <TonePop
+        kidMode={kidMode}
+        mode={phase === 'readtone' ? 'read' : 'hear'}
         onDone={(r) => {
           setResult(r);
           setPhase('summary');
         }}
       />
     );
+  }
+
+  if (phase === 'dojo') {
+    return (
+      <TonePairDojo
+        kidMode={kidMode}
+        onDone={(r) => {
+          setResult(r);
+          setPhase('summary');
+        }}
+      />
+    );
+  }
+
+  if (phase === 'echo') {
+    return <EchoBooth />;
+  }
+
+  if (phase === 'script') {
+    return <ScriptLadder />;
   }
 
   if (!makeup) {
@@ -79,12 +151,13 @@ const PlayHub: React.FC = () => {
   return (
     <SessionStart
       makeup={makeup}
-      onStart={(mode) => setPhase(mode === 'build' ? 'build' : 'tonepop')}
+      kidMode={kidMode}
+      onStart={(mode) => setPhase(mode)}
     />
   );
 };
 
-type TabId = 'today' | 'translate' | 'play' | 'deck' | 'settings';
+type TabId = 'today' | 'translate' | 'play' | 'deck';
 
 const NavIcon: React.FC<{ name: TabId }> = ({ name }) => {
   const p = {
@@ -117,17 +190,10 @@ const NavIcon: React.FC<{ name: TabId }> = ({ name }) => {
         <circle cx="18" cy="14" r="0.6" fill="currentColor" />
       </svg>
     );
-  if (name === 'deck')
-    return (
-      <svg width="22" height="22" viewBox="0 0 24 24" {...p}>
-        <path d="M5 4h10a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 2-2z" />
-        <path d="M9.5 9.5l1.2 1.2 2.3-2.3" />
-      </svg>
-    );
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" {...p}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+      <path d="M5 4h10a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 2-2z" />
+      <path d="M9.5 9.5l1.2 1.2 2.3-2.3" />
     </svg>
   );
 };
@@ -137,21 +203,16 @@ const TABS: { id: TabId; label: string; href: string; path: string }[] = [
   { id: 'translate', label: 'Translate', href: '#/translate', path: '/translate' },
   { id: 'play', label: 'Play', href: '#/play', path: '/play' },
   { id: 'deck', label: 'Deck', href: '#/deck', path: '/deck' },
-  { id: 'settings', label: 'Settings', href: '#/settings', path: '/settings' },
 ];
 
 const BottomNav: React.FC = () => {
   const { pathname } = useLocation();
-  const { mode } = useMode();
-  const tabs = TABS.filter((tab) => {
-    if (tab.id === 'translate') return mode === 'travel';
-    if (tab.id === 'play') return mode === 'learn';
-    return true;
-  });
   return (
     <nav className={styles.nav}>
-      {tabs.map((tab) => {
-        const active = pathname === tab.path;
+      {TABS.map((tab) => {
+        const active =
+          pathname === tab.path ||
+          (tab.path === '/translate' && pathname.startsWith('/translate'));
         return (
           <a
             key={tab.id}
@@ -169,6 +230,20 @@ const BottomNav: React.FC = () => {
 };
 
 const Shell: React.FC = () => {
+  // On boot, make sure at least one profile exists (first-run seeding) and that
+  // the synchronous Kid Mode mirror reflects the active profile's stored value.
+  useEffect(() => {
+    (async () => {
+      try {
+        await listProfiles();
+        await syncKidModeMirror();
+        await applyActiveProfileVoices();
+      } catch {
+        /* ignore — IndexedDB may be unavailable */
+      }
+    })();
+  }, []);
+
   return (
     <HashRouter>
       <div className={styles.shell}>
@@ -176,6 +251,7 @@ const Shell: React.FC = () => {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/translate" element={<Translate />} />
+            <Route path="/translate/:from/:to" element={<Translate />} />
             <Route path="/play" element={<PlayHub />} />
             <Route path="/deck" element={<Deck />} />
             <Route path="/trace" element={<ToneTrace />} />
@@ -183,6 +259,7 @@ const Shell: React.FC = () => {
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
+        <OfflineBanner />
         <BottomNav />
       </div>
     </HashRouter>

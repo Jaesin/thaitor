@@ -34,6 +34,13 @@
   color: var(--accent);
 }
 
+.rung {
+  font-family: var(--ui);
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
 .progressDots {
   display: flex;
   gap: 8px;
@@ -113,34 +120,6 @@
   }
 }
 
-.syllableCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 24px 18px;
-  border-radius: 22px;
-  border: 1px solid var(--hair);
-  background: var(--surface);
-}
-
-.syllableTh {
-  font-family: var(--thai);
-  font-size: 72px;
-  line-height: 1;
-}
-
-.classTag {
-  font-family: var(--ui);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: 999px;
-  color: var(--class-ink, var(--ink));
-  background: var(--class-soft, var(--surface));
-  border: 1px solid var(--class-base, var(--hair));
-}
-
 .prompt {
   font-family: var(--display);
   font-size: 20px;
@@ -150,84 +129,76 @@
 }
 
 .options {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  justify-content: center;
 }
 
-.optionBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  flex: 1 1 28%;
-  min-width: 96px;
-  padding: 18px 10px;
-  background: var(--surface);
-  border: 2px solid var(--hair);
-  border-radius: 18px;
-  color: var(--ink);
-  cursor: pointer;
-  transition: transform 0.08s ease, border-color 0.15s ease;
-}
-
-.optionBtn:active {
-  transform: scale(0.96);
-}
-
-/* ---- kid mode: larger tap targets (~30% bigger) ---- */
 .optionsKid {
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
-.optionBtn.kidMode {
-  flex: 1 1 42%;
-  min-width: 130px;
-  padding: 26px 14px;
-  gap: 12px;
-  border-radius: 24px;
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  padding: 8px;
+  background: var(--tile-soft, var(--surface));
+  border: 2px solid var(--tile-base, var(--hair));
+  border-radius: 18px;
+  color: var(--tile-ink, var(--ink));
+  cursor: pointer;
+  transition: transform 0.08s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.optionBtn.kidMode .toneGlyph {
-  width: 40px;
-  height: 32px;
+.tile:active {
+  transform: scale(0.96);
 }
 
-.optionBtn.kidMode .toneLabel {
-  font-size: 17px;
-}
-
-.optionBtn:disabled {
+.tile:disabled {
   cursor: default;
 }
 
-.optionBtnCorrect {
-  border-color: oklch(0.7 0.16 150);
-  background: oklch(0.7 0.16 150 / 0.1);
-  color: oklch(0.45 0.16 150);
+.tile.kidMode {
+  border-radius: 24px;
 }
 
-.optionBtnWrong {
+.tileGlyph {
+  font-family: var(--thai);
+  font-size: 48px;
+  line-height: 1;
+}
+
+.tile.kidMode .tileGlyph {
+  font-size: 60px;
+}
+
+.tileCorrect {
+  border-color: oklch(0.7 0.16 150);
+  background: oklch(0.7 0.16 150 / 0.12);
+  color: oklch(0.42 0.16 150);
+  box-shadow: 0 0 0 3px oklch(0.7 0.16 150 / 0.18);
+  animation: snap 0.25s ease;
+}
+
+.tileWrong {
   border-color: oklch(0.62 0.2 25);
   background: oklch(0.62 0.2 25 / 0.1);
   color: oklch(0.5 0.2 25);
 }
 
-.toneGlyph {
-  width: 28px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.toneLabel {
-  font-family: var(--ui);
-  font-size: 13px;
-  font-weight: 600;
+@keyframes snap {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .revealCard {
@@ -242,26 +213,44 @@
   text-align: center;
 }
 
-.revealThai {
+.revealCorrect {
+  border-color: oklch(0.7 0.16 150 / 0.5);
+}
+
+.revealWrong {
+  border-color: oklch(0.62 0.2 25 / 0.45);
+}
+
+.revealVerdict {
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+.revealGlyph {
   font-family: var(--thai);
-  font-size: 40px;
+  font-size: 56px;
   line-height: 1.1;
+  margin: 0;
+}
+
+.revealName {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 600;
   color: var(--ink);
   margin: 0;
 }
 
-.revealRom {
-  font-family: var(--mono);
-  font-size: 15px;
-  color: var(--accent);
-  margin: 0;
-}
-
-.revealGloss {
+.revealMeta {
   font-family: var(--ui);
   font-size: 13px;
   color: var(--muted);
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 }
 
 .nextBtn {
@@ -275,6 +264,12 @@
   padding: 14px;
   cursor: pointer;
   width: 100%;
+  margin-top: 6px;
+}
+
+.nextBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .doneCard {

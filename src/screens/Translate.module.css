@@ -14,9 +14,11 @@
 
 /* ---- header ---- */
 .header {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-right: 48px;
 }
 
 .eyebrow {
@@ -39,6 +41,102 @@
 .titleThai {
   font-family: var(--thaiDisplay, var(--thai));
   color: var(--accent);
+}
+
+/* ---- direction toggle ---- */
+.directionToggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accentInk);
+  background: var(--accentSoft);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.directionToggle:hover {
+  opacity: 0.85;
+}
+
+.directionIcon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ---- mic button (TH→EN) ---- */
+.micBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.micBtnActive {
+  color: var(--accentInk);
+  background: var(--accentSoft);
+  border-color: var(--accent);
+}
+
+/* ---- TH→EN result ---- */
+.enSpeakBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.enSpeakBtnActive {
+  color: var(--accentInk);
+  background: var(--accentSoft);
+  border-color: var(--accent);
+}
+
+.thEnEnglish {
+  font-family: var(--display);
+  font-size: clamp(24px, 7vw, 32px);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.thEnThai {
+  font-family: var(--thaiDisplay, var(--thai));
+  font-size: clamp(22px, 6vw, 28px);
+  line-height: 1.3;
+  color: var(--accentInk);
+}
+
+.thEnGloss {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
 }
 
 /* ---- input ---- */
@@ -74,6 +172,43 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.inputActionsSpacer {
+  flex: 1;
+}
+
+.autoplayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.autoplayToggleActive {
+  color: var(--accentInk);
+  background: var(--accentSoft);
+  border-color: var(--accent);
+}
+
+.autoplayDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+.autoplayToggleActive .autoplayDot {
+  background: var(--accent);
 }
 
 .clearBtn {
@@ -173,8 +308,27 @@
 .resultHead {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   position: relative;
+}
+
+.resultLabel {
+  margin-right: auto;
+}
+
+.showBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
 }
 
 /* ---- saved toast ---- */
@@ -548,4 +702,171 @@
   color: var(--muted);
   opacity: 0.7;
   margin-top: 1px;
+}
+
+/* ---- show card (full-screen flash) ---- */
+.showCardOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 32px 24px;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* Subtle white layer to lift perceived brightness (no native brightness API). */
+.showCardBrightness {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  mix-blend-mode: screen;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.showCardThai {
+  position: relative;
+  font-family: var(--thai);
+  font-size: clamp(64px, 22vw, 160px);
+  line-height: 1.1;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.showCardRom {
+  position: relative;
+  font-family: var(--mono);
+  font-size: clamp(20px, 6vw, 34px);
+  color: var(--accentInk);
+}
+
+.showCardToggle {
+  position: relative;
+  font-family: var(--ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 10px 18px;
+  cursor: pointer;
+}
+
+.showCardHint {
+  position: absolute;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  font-family: var(--ui);
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* ---- recent translations ---- */
+.recent {
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  overflow: hidden;
+}
+
+.recentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 18px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.recentTitle {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.recentChevron {
+  color: var(--muted);
+  transition: transform 0.18s ease;
+}
+
+.recentChevronOpen {
+  transform: rotate(180deg);
+}
+
+.recentList {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--hair);
+}
+
+.recentRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 0 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.recentRow:last-child {
+  border-bottom: none;
+}
+
+.recentRowMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.recentEn {
+  font-family: var(--ui);
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.recentThai {
+  font-family: var(--thaiDisplay, var(--thai));
+  font-size: 18px;
+  color: var(--accentInk);
+  line-height: 1.2;
+}
+
+.recentPlay {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  color: var(--accentInk);
+  background: var(--accentSoft);
+  border: 1px solid var(--hair);
+  cursor: pointer;
 }
