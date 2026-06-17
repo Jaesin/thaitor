@@ -51,9 +51,18 @@ function randomToken(length = 24): string {
  * so a stalled round-trip would otherwise hang the UI forever. */
 const JOIN_TIMEOUT_MS = 15_000;
 
+// Hermetic e2e seam: the mocked test profile has no real Firestore membership
+// to read, so membership is derived from the locally-seeded record instead of
+// the live onSnapshot listener. Gated behind VITE_E2E_MOCK, which is only set by
+// the hermetic test server — never in production or live (real-Firestore) runs,
+// so prod behaviour is untouched.
+const E2E_MOCK = import.meta.env.VITE_E2E_MOCK === '1';
+
 export function useMember(): UseMemberResult {
   const stored = readStored();
-  const [status, setStatus] = useState<MemberStatus>('loading');
+  const [status, setStatus] = useState<MemberStatus>(
+    E2E_MOCK ? (stored ? 'member' : 'public') : 'loading',
+  );
   const [uid, setUid] = useState<string | null>(stored?.uid ?? null);
   const [displayName, setDisplayName] = useState<string | null>(stored?.name ?? null);
   const uidRef = useRef<string | null>(uid);
@@ -63,6 +72,10 @@ export function useMember(): UseMemberResult {
   const memberConfirmRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
+    // E2E_MOCK already resolved status/uid/displayName from the seeded record at
+    // init (see above); skip the real auth + Firestore listener entirely.
+    if (E2E_MOCK) return;
+
     let unsub: (() => void) | undefined;
     let cancelled = false;
 

@@ -38,10 +38,10 @@
   justify-content: space-around;
   align-items: center;
   padding: 8px 6px calc(14px + env(safe-area-inset-bottom, 0px));
-  background: var(--navBg, var(--bg));
+  /* Opaque paper — a translucent bar let scrolling content bleed through and
+     visually collide with the tab labels (DR-10). */
+  background: var(--bg);
   border-top: 1px solid var(--hair);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .item {
@@ -105,4 +105,71 @@
   color: #fff;
   background: var(--accent);
   border-color: var(--accent);
+}
+
+/* Membership gate — shown on member-only routes before a visitor has joined. */
+.gate {
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0 24px;
+  font-family: var(--ui);
+}
+
+.gateKick {
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.gateTitle {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.gateLede {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.gateLink {
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.gateSplash {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gateSpinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--hair);
+  border-top-color: var(--accent);
+  animation: gateSpin 0.8s linear infinite;
+}
+
+@keyframes gateSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }

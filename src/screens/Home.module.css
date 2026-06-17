@@ -1,281 +1,185 @@
+/*
+ * Home / Today — "paper & ink".
+ * Flat ink-on-warm-paper. No cards, no shadows, no gradients. Content is
+ * separated by whitespace and thin hairline rules. One teal accent, used
+ * sparingly. Thai is the hero; English is the quiet subordinate voice.
+ */
+
 .screen {
   min-height: 100%;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--ui);
-  padding: clamp(20px, 5vw, 32px) clamp(16px, 5vw, 28px);
-  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  max-width: 560px;
+  padding: clamp(18px, 5vw, 28px) 0
+    calc(88px + env(safe-area-inset-bottom, 0px));
+  max-width: 480px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 22px;
 }
 
-/* ---- header ---- */
-.header {
-  position: relative;
+/* Horizontal padding lives on each band so hairline rules can run edge to
+   edge of the content column. */
+.band {
+  padding-left: clamp(20px, 6vw, 26px);
+  padding-right: clamp(20px, 6vw, 26px);
+}
+
+/* Thin ink hairline between bands. */
+.hair {
+  height: 1px;
+  background: var(--hair);
+  margin: 20px clamp(20px, 6vw, 26px);
+}
+
+.kick {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* ---- phase line ------------------------------------------------------- */
+.phaseLine {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  padding-right: 48px;
 }
 
-.greetingRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.greeting {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.eyebrow {
+.phaseMeta {
   font-family: var(--mono);
   font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
   color: var(--muted);
+  text-decoration: none;
 }
 
-.title {
-  font-family: var(--display);
-  font-size: clamp(28px, 8vw, 34px);
-  font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-}
-
-.titleThai {
-  font-family: var(--thaiDisplay, var(--thai));
+a.phaseMeta:hover {
   color: var(--accent);
 }
 
-/* ---- streak + rank status line ---- */
-.statusLine {
+/* ---- greeting / phrase of the day ------------------------------------- */
+.greeting {
+  margin-top: 16px;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
+  flex-direction: column;
+}
+
+/* GearLink is position:absolute; give it a positioned, sized row to land in. */
+.gearRow {
+  position: relative;
+  height: 40px;
+  margin-bottom: 4px;
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px 12px;
+}
+
+.syll {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.toneGlyph {
+  width: 24px;
+  height: 15px;
+  display: block;
+  color: var(--toneInk);
+  opacity: 0.8;
+}
+
+.toneGlyph path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.syllThai {
+  font-family: var(--thai);
+  font-size: clamp(34px, 11vw, 44px);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ink);
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+.gloss {
+  margin-top: 12px;
+  font-family: var(--mono);
   font-size: 12.5px;
   color: var(--muted);
 }
 
-.statusItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-.statusItem strong {
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.statusDot {
-  color: var(--faint);
-}
-
-/* ---- trip status banner ---- */
-.tripBanner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  text-decoration: none;
-  border-radius: 16px;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  padding: 14px 18px;
-  color: var(--ink);
-  font-family: var(--display);
-  font-size: 15px;
-  font-weight: 600;
-  transition: border-color 0.18s ease, transform 0.18s ease;
-}
-
-.tripBanner:hover {
-  border-color: var(--accent);
-}
-
-.tripText strong {
-  color: var(--accent);
-}
-
-.tripBannerActive {
-  background: linear-gradient(150deg, var(--accentSoft), var(--surface) 80%);
-  border-color: var(--accent);
-  font-size: 16px;
-}
-
-.tripBannerActive .tripText strong {
-  color: inherit;
-}
-
-.tripCta {
-  flex: none;
+.personal {
+  margin-top: 6px;
   font-family: var(--ui);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accentInk);
-  white-space: nowrap;
-}
-
-.tripBannerSubtle {
-  background: transparent;
-  border-style: dashed;
   font-size: 13.5px;
-  font-weight: 500;
+  line-height: 1.45;
   color: var(--muted);
-  padding: 10px 16px;
+  max-width: 30ch;
 }
 
-.tripHint {
+.personal strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* understated text-link "listen" — not a filled button */
+.listen {
   align-self: flex-start;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-decoration: none;
-  color: var(--faint);
-  margin-top: -8px;
-}
-
-.tripHint:hover {
-  color: var(--accentInk);
-}
-
-/* theme switcher */
-.themeSwitch {
+  margin-top: 16px;
   display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-}
-
-.themeDot {
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  border: 1px solid var(--hair);
-  cursor: pointer;
-  padding: 0;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.themeDot:hover {
-  transform: scale(1.08);
-}
-
-.themeDotActive {
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--accent);
-}
-
-/* mode toggle */
-.headerControls {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
-}
-
-.modeSwitch {
-  display: inline-flex;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-}
-
-.modePill {
+  padding: 0 0 4px;
   border: none;
   background: none;
   cursor: pointer;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.78rem;
+  font-family: var(--ui);
+  font-size: 14px;
   font-weight: 600;
   color: var(--ink);
-  opacity: 0.6;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  border-bottom: 1.5px solid var(--ink);
 }
 
-.modePillActive {
-  opacity: 1;
-  background: var(--accent);
-  color: var(--bg);
+.listen:disabled {
+  cursor: default;
 }
 
-/* ---- phrase of the day ---- */
-.phraseCard {
-  position: relative;
-  overflow: hidden;
-  border-radius: 22px;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  padding: 24px 22px 22px;
-  box-shadow: 0 1px 0 var(--hair2), 0 18px 40px -28px rgba(0, 0, 0, 0.5);
-}
-
-.phraseGlow {
-  position: absolute;
-  inset: -40% 40% auto -10%;
-  height: 220px;
-  background: radial-gradient(circle at 30% 30%, var(--accentSoft), transparent 70%);
-  pointer-events: none;
-}
-
-.phraseHead {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-
-.phraseLabel {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+.listenPending {
   color: var(--muted);
+  border-bottom-style: dotted;
+  border-bottom-color: var(--faint);
 }
 
-.speakBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--ui);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accentInk);
-  background: var(--accentSoft);
-  border: 1px solid var(--hair);
-  border-radius: 999px;
-  padding: 6px 12px;
-  cursor: pointer;
+.listenIcon {
+  display: block;
+  color: var(--accent);
 }
 
+/* equalizer bars while playing */
 .eq {
   display: inline-flex;
   align-items: flex-end;
   gap: 2px;
-  height: 12px;
+  height: 13px;
 }
 
 .eq span {
   width: 2.5px;
   height: 100%;
   border-radius: 2px;
-  background: var(--accentInk);
+  background: var(--accent);
   transform-origin: bottom;
 }
 
@@ -288,408 +192,191 @@
   .eq[data-playing] span:nth-child(4) { animation-delay: 0.45s; }
 }
 
-.speakBtnPending {
-  border-style: dotted;
-}
-
-.speakBtnPlaying {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-}
-
-.speakBtnPlaying .eq span {
-  background: var(--bg);
-}
-
-.syllables {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 10px 14px;
-  margin-bottom: 16px;
-}
-
-.syllable {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.toneGlyph {
-  width: 28px;
-  height: 18px;
+/* the walk — a single hairline with a node marking trip progress */
+.walk {
+  margin-top: 18px;
   display: block;
-  color: var(--toneInk);
-  opacity: 0.85;
+  width: 100%;
+  height: 14px;
+  overflow: visible;
 }
 
-.toneGlyph path {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+/* ---- ready to review -------------------------------------------------- */
+.reviewHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 6px;
 }
 
-.syllThai {
-  font-family: var(--thaiDisplay, var(--thai));
-  font-size: clamp(34px, 11vw, 46px);
-  line-height: 1;
-  color: var(--ink);
-  word-break: keep-all;
-  hyphens: none;
-  white-space: nowrap;
-}
-
-.syllRoman {
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--muted);
-  letter-spacing: 0.01em;
-}
-
-.phraseMeaning {
-  position: relative;
+.reviewNum {
   font-family: var(--display);
-  font-size: 17px;
-  font-weight: 500;
+  font-size: 52px;
+  font-weight: 700;
   color: var(--ink);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
 }
 
-.phraseSub {
-  position: relative;
+.lotuses {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding-bottom: 4px;
+}
+
+.reviewSub {
+  margin-top: 4px;
+  font-family: var(--ui);
   font-size: 13px;
   color: var(--muted);
-  margin-top: 2px;
 }
 
-/* ---- mode cards ---- */
-.sectionLabel {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: -6px;
-}
-
-.modes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.mode {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* primary action — editorial text link with a single accent underline */
+.beginLink {
+  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 5px;
   text-decoration: none;
-  border-radius: 20px;
-  padding: 20px 18px 18px;
-  background: var(--surface);
-  border: 1px solid var(--hair);
+  border-bottom: 2px solid var(--accent);
+  font-family: var(--ui);
+  font-size: 15px;
+  font-weight: 700;
   color: var(--ink);
-  min-height: 158px;
-  transition: transform 0.18s ease, border-color 0.18s ease;
 }
 
-.mode:hover {
-  transform: translateY(-3px);
-  border-color: var(--accent);
-}
-
-.modeTravel {
-  background: linear-gradient(155deg, var(--accentSoft), var(--surface) 65%);
-}
-
-.modeLearn {
-  background: linear-gradient(155deg, var(--goldSoft, var(--accentSoft)), var(--surface) 65%);
-}
-
-.modeIcon {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: var(--raise);
-  border: 1px solid var(--hair);
-  color: var(--accentInk);
-}
-
-.modeLearn .modeIcon {
-  color: var(--gold, var(--accentInk));
-}
-
-.modeName {
-  font-family: var(--display);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.1;
-  margin-top: auto;
-}
-
-.modeDesc {
-  font-size: 12.5px;
-  line-height: 1.35;
-  color: var(--muted);
-}
-
-.modeArrow {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  color: var(--faint);
-  transition: transform 0.18s ease, color 0.18s ease;
-}
-
-.mode:hover .modeArrow {
-  transform: translate(2px, -2px);
+.beginLink svg {
   color: var(--accent);
 }
 
-/* ---- kid mode card ---- */
-.kidCard {
+/* ---- quests ----------------------------------------------------------- */
+.questHead {
   display: flex;
-  align-items: center;
-  gap: 18px;
-  text-decoration: none;
-  border-radius: 24px;
-  padding: 24px 22px;
-  min-height: 96px;
-  background: linear-gradient(135deg, var(--accent), var(--accentInk, var(--accent)));
-  color: var(--bg);
-  border: none;
-  box-shadow: 0 12px 30px -14px var(--accent);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
-.kidCard:hover,
-.kidCard:active {
-  transform: translateY(-3px) scale(1.01);
-  box-shadow: 0 16px 36px -12px var(--accent);
-}
-
-.kidEmoji {
-  font-size: 48px;
-  line-height: 1;
-  flex: none;
-}
-
-.kidText {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.kidTitle {
-  font-family: var(--display);
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.05;
-}
-
-.kidSub {
-  font-family: var(--ui);
-  font-size: 16px;
-  font-weight: 600;
-  opacity: 0.92;
-}
-
-/* ---- progress strip ---- */
-.progress {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  border-radius: 18px;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  padding: 16px 18px;
-}
-
-.ring {
-  flex: none;
-}
-
-.ringTrack {
-  stroke: var(--hair);
-}
-
-.ringFill {
-  stroke: var(--accent);
-  stroke-linecap: round;
-  transform: rotate(-90deg);
-  transform-origin: center;
-}
-
-.ringLabel {
+.questCount {
   font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 600;
-  fill: var(--ink);
-}
-
-.progressText {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.progressTitle {
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.progressSub {
-  font-size: 12.5px;
+  font-size: 11px;
   color: var(--muted);
-}
-
-.reviewBtn {
-  margin-left: auto;
-  flex: none;
-  font-family: var(--ui);
-  font-weight: 600;
-  font-size: 13px;
-  text-decoration: none;
-  color: var(--accentInk);
-  background: var(--accentSoft);
-  border: 1px solid var(--hair);
-  border-radius: 999px;
-  padding: 9px 16px;
-  white-space: nowrap;
-}
-
-.quests {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .questList {
   list-style: none;
-  padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  padding: 0;
 }
 
 .questItem {
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-radius: 14px;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  padding: 12px 14px;
-  transition: opacity 0.2s ease;
+  gap: 11px;
+  padding: 6px 0;
 }
 
-.questDone {
-  opacity: 0.5;
-}
-
-.questIcon {
-  font-size: 20px;
-  line-height: 1;
+.questDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 4px;
   flex: none;
+  background: transparent;
+  border: 1.5px solid var(--faint);
 }
 
-.questText {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  flex: 1;
-  min-width: 0;
-}
-
-.questLabel {
-  font-family: var(--display);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.questDesc {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.questCheck {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--accent);
-  flex: none;
-}
-
-/* --- Family flame ------------------------------------------------------- */
-
-.familyFlame {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-radius: 16px;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  padding: 10px 14px;
-  font-family: var(--display);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-  transition: border-color 0.18s ease, background 0.18s ease;
-}
-
-.familyFlameLit {
-  background: linear-gradient(150deg, var(--accentSoft), var(--surface) 80%);
+.questDotDone {
+  background: var(--accent);
   border-color: var(--accent);
 }
 
-.familyFlameIcon {
-  font-size: 18px;
-  flex: none;
-  filter: grayscale(0.4);
+.questText {
+  font-family: var(--ui);
+  font-size: 13.5px;
+  color: var(--ink);
 }
 
-.familyFlameLit .familyFlameIcon {
-  filter: none;
+.questItemDone .questText {
+  color: var(--faint);
+  text-decoration: line-through;
 }
 
-.familyChips {
+/* ---- kid play (only when Kid Mode is on) ------------------------------ */
+.kidLink {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-family: var(--ui);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 4px;
+}
+
+.kidLink svg {
+  color: var(--accent);
+}
+
+/* ---- family flame ----------------------------------------------------- */
+.spacer {
+  flex: 1;
+  min-height: 24px;
+}
+
+.family {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
+  padding-top: 14px;
+  margin-top: 8px;
+  border-top: 1px solid var(--hair);
+}
+
+.flameIcon {
   flex: none;
+  display: block;
+  color: var(--faint);
 }
 
-.familyChip {
-  font-size: 18px;
-  line-height: 1;
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-.familyChipOn {
-  opacity: 1;
-}
-
-.familyChipOff {
-  opacity: 0.35;
-  filter: grayscale(0.6);
+.familyLit .flameIcon {
+  color: var(--accent);
 }
 
 .familyLabel {
-  margin-left: auto;
+  flex: 1;
+  font-family: var(--ui);
+  font-size: 12.5px;
   color: var(--muted);
-  font-size: 13px;
 }
 
-.familyFlameLit .familyLabel {
-  color: var(--accent);
+.avatars {
+  display: flex;
+  flex: none;
+}
+
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  border: 2px solid var(--bg);
+  display: grid;
+  place-items: center;
+  font-family: var(--ui);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bg);
+}
+
+.avatar + .avatar {
+  margin-left: -6px;
+}
+
+.avatarOff {
+  opacity: 0.45;
 }

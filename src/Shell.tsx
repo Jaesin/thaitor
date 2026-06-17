@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom';
+import { useMember } from './auth/useMember';
 import Home from './screens/Home';
 import Translate from './screens/Translate';
 import Exercise from './screens/Exercise';
@@ -157,6 +158,43 @@ const PlayHub: React.FC = () => {
   );
 };
 
+/**
+ * Membership guard for the experience screens. A non-member must never reach a
+ * screen that calls the Worker (Home prefetches TTS on mount; Translate/Deck
+ * call translate()/tts()), or an anonymous visitor could drain Gemini/Azure
+ * quota without joining (see status/bug_access-control.md). Rendered as a
+ * layout route so a single useMember listener covers all the gated children.
+ */
+const RequireMembership: React.FC = () => {
+  const { status } = useMember();
+
+  if (status === 'loading' || status === 'joining') {
+    return (
+      <div className={styles.gateSplash} role="status" aria-live="polite">
+        <span className={styles.gateSpinner} aria-hidden="true" />
+      </div>
+    );
+  }
+
+  if (status !== 'member') {
+    return (
+      <div className={styles.gate}>
+        <span className={styles.gateKick}>Thaitor</span>
+        <h1 className={styles.gateTitle}>Family members only</h1>
+        <p className={styles.gateLede}>
+          Thaitor is invite-only. Open the invite link a family member shared with you to
+          join — then this screen unlocks.
+        </p>
+        <a className={styles.gateLink} href="#/join">
+          I have an invite link →
+        </a>
+      </div>
+    );
+  }
+
+  return <Outlet />;
+};
+
 type TabId = 'today' | 'translate' | 'play' | 'deck';
 
 const NavIcon: React.FC<{ name: TabId }> = ({ name }) => {
@@ -249,14 +287,22 @@ const Shell: React.FC = () => {
       <div className={styles.shell}>
         <main className={styles.content}>
           <Routes>
+            {/* Open routes. Join is the entry point; Settings self-gates with
+                its own non-member prompt; Home works offline for anyone (its
+                TTS prefetch is blocked server-side for non-members and falls
+                back to browser speech — see status/bug_access-control.md). */}
             <Route path="/" element={<Home />} />
-            <Route path="/translate" element={<Translate />} />
-            <Route path="/translate/:from/:to" element={<Translate />} />
-            <Route path="/play" element={<PlayHub />} />
-            <Route path="/deck" element={<Deck />} />
-            <Route path="/trace" element={<ToneTrace />} />
             <Route path="/join" element={<Join />} />
             <Route path="/settings" element={<Settings />} />
+            {/* Member-only screens — these need live translation/audio, so a
+                non-member can't use them and is shown the join wall. */}
+            <Route element={<RequireMembership />}>
+              <Route path="/translate" element={<Translate />} />
+              <Route path="/translate/:from/:to" element={<Translate />} />
+              <Route path="/play" element={<PlayHub />} />
+              <Route path="/deck" element={<Deck />} />
+              <Route path="/trace" element={<ToneTrace />} />
+            </Route>
           </Routes>
         </main>
         <OfflineBanner />

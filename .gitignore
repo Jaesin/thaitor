@@ -25,3 +25,13 @@ dist-ssr
 
 # No specs in the repo
 specs
+
+# e2e generated reports
+reports
+.playwright-mcp
+
+# docs
+status
+HANDOFF-DESIGN.md
+PROMPT-DESIGN-TO-CODE.md
+PROMPT-FOR-DESIGN.md
