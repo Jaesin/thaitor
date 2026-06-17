@@ -16,7 +16,7 @@ const API_BASE =
   import.meta.env.VITE_API_BASE ||
   (import.meta.env.DEV
     ? 'http://localhost:5001'
-    : 'https://thaitor-worker.jaesinner.workers.dev');
+    : '');
 
 async function authHeaders(): Promise<Record<string, string>> {
   const { auth, ensureSignedIn } = await import('../firebase');

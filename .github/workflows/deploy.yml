@@ -29,6 +29,8 @@ jobs:
       - run: npm ci
       - run: npm run build
         # Vite root is app/, output goes to dist/ at the project root
+        env:
+          VITE_API_BASE: ${{ secrets.PROD_WORKER_URL }}
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:
