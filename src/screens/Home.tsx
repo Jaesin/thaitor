@@ -4,9 +4,11 @@ import { tts } from '../worker/api';
 import { getDailyProgress, completeQuest } from '../data/quests';
 import { getDueNow, getAllSRSRecords } from '../data/store';
 import { BUILT_IN_PHRASES } from '../data/phrases';
-import { getKidMode, getActiveProfile } from '../data/profiles';
+import { getStreak, getTotalXP, getRank } from '../data/progression';
+import { getKidMode } from '../data/profiles';
 import { getFamilyFlameState, type FamilyFlameState } from '../data/family';
-import GearLink from '../components/GearLink';
+import MascotElephant from '../components/MascotElephant';
+import mascotStyles from '../components/MascotElephant.module.css';
 import styles from './Home.module.css';
 
 interface Syllable {
@@ -35,8 +37,6 @@ function getPhraseOfTheDay(): Phrase {
 }
 
 const PHRASE_OF_THE_DAY = getPhraseOfTheDay();
-const PHRASE_THAI = PHRASE_OF_THE_DAY.syllables.map((s) => s.thai).join('');
-const PHRASE_ROMAN = PHRASE_OF_THE_DAY.syllables.map((s) => s.roman).join(' ');
 
 function ToneGlyph({ tone }: { tone: ToneKey }) {
   return (
@@ -46,51 +46,7 @@ function ToneGlyph({ tone }: { tone: ToneKey }) {
   );
 }
 
-/** Quiet, near-monochrome growth motif — a teal lotus on warm paper. */
-function Lotus({ stage, size = 26, dim = false }: { stage: 0 | 1 | 2; size?: number; dim?: boolean }) {
-  const leaf = 'var(--faint)';
-  const petal = 'var(--accent)';
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 48 48"
-      fill="none"
-      aria-hidden="true"
-      style={{ display: 'block', opacity: dim ? 0.4 : 1 }}
-    >
-      {stage === 0 && (
-        <>
-          <ellipse cx="24" cy="30" rx="6" ry="8" fill={leaf} opacity="0.55" />
-          <ellipse cx="24" cy="28" rx="3" ry="5" fill={leaf} />
-        </>
-      )}
-      {stage === 1 && (
-        <>
-          <path d="M24 40 V24" stroke={leaf} strokeWidth="2.5" strokeLinecap="round" />
-          <ellipse cx="18" cy="26" rx="6" ry="3.4" fill={leaf} transform="rotate(-28 18 26)" />
-          <ellipse cx="30" cy="26" rx="6" ry="3.4" fill={leaf} transform="rotate(28 30 26)" />
-        </>
-      )}
-      {stage === 2 && (
-        <>
-          <ellipse cx="18" cy="34" rx="6" ry="3.4" fill={leaf} transform="rotate(-24 18 34)" />
-          <ellipse cx="30" cy="34" rx="6" ry="3.4" fill={leaf} transform="rotate(24 30 34)" />
-          <ellipse cx="24" cy="24" rx="6.5" ry="11" fill={petal} />
-          <ellipse cx="24" cy="24" rx="2.6" ry="8" fill="#fff" opacity="0.28" />
-        </>
-      )}
-    </svg>
-  );
-}
-
-function Arrow() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-      <path d="M4 12h15M13 6l6 6-6 6" />
-    </svg>
-  );
-}
+const PHRASE_THAI = PHRASE_OF_THE_DAY.syllables.map((s) => s.thai).join('');
 
 type TripStatus =
   | { kind: 'none' }
@@ -135,57 +91,14 @@ function getTripStatus(): TripStatus {
   return { kind: 'during' };
 }
 
-function timeOfDay(): string {
-  const h = new Date().getHours();
-  if (h >= 5 && h < 11) return 'Morning';
-  if (h >= 11 && h < 16) return 'Afternoon';
-  if (h >= 16 && h < 20) return 'Evening';
-  return 'Evening';
-}
-
-// Phase-line meta + warm one-line metaphor, both derived from the trip.
-function tripCopy(trip: TripStatus): { meta: string; metaphor: string; metaHref?: string } {
-  switch (trip.kind) {
-    case 'before':
-      return {
-        meta: `${trip.days} ${trip.days === 1 ? 'day' : 'days'} · Thailand`,
-        metaphor: `Thailand is ${trip.days} ${trip.days === 1 ? 'day' : 'days'} away.`,
-      };
-    case 'during':
-      return { meta: 'In Thailand', metaphor: "You're there now — say it out loud." };
-    case 'after':
-      return { meta: 'Home again', metaphor: 'Home again. Keep the words warm.' };
-    default:
-      return { meta: 'Plan your trip', metaphor: '', metaHref: '#/settings' };
-  }
-}
-
-// Node position (0–1) along the journey hairline.
-function tripProgress(trip: TripStatus): number | null {
-  switch (trip.kind) {
-    case 'before': {
-      // No fixed horizon to anchor against — fewer days reads as further along.
-      const f = 1 - trip.days / 60;
-      return Math.min(0.92, Math.max(0.08, f));
-    }
-    case 'during':
-      return 1;
-    case 'after':
-      return 1;
-    default:
-      return null;
-  }
-}
-
-const AVATAR_INK = ['var(--ink)', 'var(--muted)', 'var(--faint)'];
-
 const Home: React.FC = () => {
-  const [speakState, setSpeakState] = useState<'idle' | 'playing'>('idle');
+  const [speakState, setSpeakState] = useState<'idle' | 'loading' | 'playing'>('idle');
   const [audioReady, setAudioReady] = useState(false);
   const [quests, setQuests] = useState(() => getDailyProgress());
-  const [trip] = useState<TripStatus>(() => getTripStatus());
+  const [tripStatus] = useState<TripStatus>(() => getTripStatus());
+  const [streak] = useState(() => getStreak());
+  const [rank] = useState(() => getRank(getTotalXP()));
   const [kidMode] = useState(() => getKidMode());
-  const [name, setName] = useState('');
   const [family, setFamily] = useState<FamilyFlameState | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const cachedAudioUrl = useRef<string | null>(null);
@@ -220,20 +133,20 @@ const Home: React.FC = () => {
     };
   }, []);
 
-  const [due, setDue] = useState(0);
+  const [reviewsDone, setReviewsDone] = useState(0);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
 
   useEffect(() => {
     (async () => {
-      const [dueNow] = await Promise.all([getDueNow(), getAllSRSRecords()]);
-      setDue(dueNow.length);
+      const [due, all] = await Promise.all([getDueNow(), getAllSRSRecords()]);
+      setReviewsTotal(all.length);
+      // "done" = records that are NOT due (already reviewed today or future intervals)
+      setReviewsDone(all.length - due.length);
     })();
   }, []);
 
   useEffect(() => {
     let active = true;
-    getActiveProfile().then((p) => {
-      if (active && p?.name) setName(p.name);
-    });
     getFamilyFlameState().then((state) => {
       if (active) setFamily(state);
     });
@@ -241,6 +154,10 @@ const Home: React.FC = () => {
       active = false;
     };
   }, []);
+
+  const pct = reviewsTotal === 0 ? 0 : reviewsDone / reviewsTotal;
+  const r = 22;
+  const circ = 2 * Math.PI * r;
 
   function stopPlayback() {
     if (audioRef.current) {
@@ -254,9 +171,9 @@ const Home: React.FC = () => {
     setSpeakState('idle');
   }
 
-  // Browser speech synthesis — the always-available baseline. Used until the
-  // higher-quality TTS audio has loaded, and permanently if it never loads
-  // (e.g. a non-member whose TTS request the Worker blocks).
+  // Browser speech synthesis — the always-available baseline. Used when the
+  // higher-quality TTS audio never loads (e.g. a non-member whose TTS request
+  // the Worker blocks) or fails to play.
   function playViaSpeech() {
     const utterance = new SpeechSynthesisUtterance(PHRASE_THAI);
     // Thai lang is required: without it Firefox/Safari pick a non-Thai default
@@ -274,6 +191,8 @@ const Home: React.FC = () => {
   }
 
   async function handleListen() {
+    if (speakState === 'loading') return;
+
     // Tapping while playing stops the current playback (audio or speech).
     if (speakState === 'playing') {
       stopPlayback();
@@ -311,174 +230,236 @@ const Home: React.FC = () => {
     playViaSpeech();
   }
 
-  const copy = tripCopy(trip);
-  const progress = tripProgress(trip);
-  const questsDone = quests.filter((q) => q.done).length;
-  const reviewMinutes = Math.max(1, Math.round(due * 0.35));
-
   return (
     <div className={styles.screen}>
-      <div className={`${styles.band} ${styles.gearRow}`}>
-        <GearLink />
-      </div>
+      <header className={styles.header}>
+        <div className={styles.greeting}>
+          <span className={styles.eyebrow}>Sawatdee, family</span>
+          <h1 className={styles.title}>
+            Today <span className={styles.titleThai}>วันนี้</span>
+          </h1>
+          <div className={styles.statusLine}>
+            <span className={styles.statusItem}>
+              {streak.count > 0 ? (
+                <>
+                  🔥 <strong>{streak.count}</strong> day streak
+                </>
+              ) : (
+                '🔥 Start your streak!'
+              )}
+            </span>
+            <span className={styles.statusDot} aria-hidden="true">
+              ·
+            </span>
+            <span className={styles.statusItem} lang="th">
+              {rank.thai}
+            </span>
+          </div>
+        </div>
+        <MascotElephant
+          size={200}
+          mood="happy"
+          landscape
+          className={`${mascotStyles.mascot} ${styles.headerMascot}`}
+        />
+      </header>
 
-      {/* phase line */}
-      <div className={`${styles.band} ${styles.phaseLine}`}>
-        <span className={styles.kick}>Today</span>
-        {copy.metaHref ? (
-          <a className={styles.phaseMeta} href={copy.metaHref}>
-            {copy.meta} →
-          </a>
-        ) : (
-          <span className={styles.phaseMeta}>{copy.meta}</span>
-        )}
-      </div>
+      {family && family.members.length >= 2 && (
+        <section
+          className={`${styles.familyFlame} ${
+            family.allPracticedToday ? styles.familyFlameLit : ''
+          }`}
+          aria-label="Family flame"
+        >
+          <span className={styles.familyFlameIcon} aria-hidden="true">
+            🔥
+          </span>
+          <span className={styles.familyChips}>
+            {family.members.map((m) => (
+              <span
+                key={m.id}
+                className={`${styles.familyChip} ${
+                  m.practicedToday ? styles.familyChipOn : styles.familyChipOff
+                }`}
+                title={`${m.name} ${m.practicedToday ? '✓' : '…'}`}
+              >
+                {m.emoji}
+              </span>
+            ))}
+          </span>
+          <span className={styles.familyLabel}>
+            {family.allPracticedToday
+              ? 'All in today! 🔥'
+              : `Family flame · day ${family.flameDays}`}
+          </span>
+        </section>
+      )}
 
-      {/* greeting + phrase of the day — Thai is the hero */}
-      <div className={`${styles.band} ${styles.greeting}`}>
-        <div className={styles.hero}>
+      {tripStatus.kind === 'before' && (
+        <a className={styles.tripBanner} href="#/translate">
+          <span className={styles.tripText}>
+            <strong>{tripStatus.days}</strong>{' '}
+            {tripStatus.days === 1 ? 'day' : 'days'} until Thailand 🇹🇭
+          </span>
+        </a>
+      )}
+      {tripStatus.kind === 'during' && (
+        <div className={styles.tripHint}>Welcome to Thailand</div>
+      )}
+      {tripStatus.kind === 'after' && (
+        <div className={`${styles.tripBanner} ${styles.tripBannerSubtle}`}>
+          <span className={styles.tripText}>Welcome home from Thailand 🏠</span>
+        </div>
+      )}
+      {tripStatus.kind === 'none' && (
+        <a className={styles.tripHint} href="#/settings">
+          Set your trip dates →
+        </a>
+      )}
+
+      <section className={styles.phraseCard} aria-label="Phrase of the day">
+        <div className={styles.phraseGlow} />
+        <div className={styles.phraseHead}>
+          <span className={styles.phraseLabel}>Phrase of the day</span>
+          <button
+            type="button"
+            className={`${styles.speakBtn} ${speakState === 'playing' ? styles.speakBtnPlaying : ''} ${
+              !audioReady && speakState === 'idle' ? styles.speakBtnPending : ''
+            }`}
+            onClick={handleListen}
+            disabled={speakState === 'loading'}
+            aria-label={speakState === 'playing' ? 'Stop' : 'Listen to phrase'}
+          >
+            <span
+              className={styles.eq}
+              aria-hidden="true"
+              data-playing={speakState === 'playing' || undefined}
+            >
+              <span />
+              <span />
+              <span />
+              <span />
+            </span>
+            {speakState === 'loading' ? 'Loading…' : speakState === 'playing' ? 'Stop' : 'Listen'}
+          </button>
+        </div>
+
+        <div className={styles.syllables}>
           {PHRASE_OF_THE_DAY.syllables.map((syll, i) => (
-            <span className={styles.syll} key={i}>
+            <div className={styles.syllable} key={i}>
               <ToneGlyph tone={syll.tone} />
               <span className={styles.syllThai} lang="th">
                 {syll.thai}
               </span>
-            </span>
+              <span className={styles.syllRoman}>{syll.roman}</span>
+            </div>
           ))}
         </div>
 
-        <p className={styles.gloss}>
-          {PHRASE_ROMAN} · “{PHRASE_OF_THE_DAY.meaning}”
-        </p>
+        <p className={styles.phraseMeaning}>{PHRASE_OF_THE_DAY.meaning}</p>
+        <p className={styles.phraseSub}>{PHRASE_OF_THE_DAY.literal}</p>
+      </section>
 
-        <p className={styles.personal}>
-          <strong>
-            {timeOfDay()}
-            {name ? `, ${name}` : ''}.
-          </strong>
-          {copy.metaphor ? ` ${copy.metaphor}` : ''}
-        </p>
-
-        <button
-          type="button"
-          className={`${styles.listen} ${
-            !audioReady && speakState === 'idle' ? styles.listenPending : ''
-          }`}
-          onClick={handleListen}
-          aria-label={speakState === 'playing' ? 'Stop' : 'Listen to the phrase'}
-        >
-          {speakState === 'playing' ? (
-            <span className={styles.eq} aria-hidden="true" data-playing>
-              <span />
-              <span />
-              <span />
-              <span />
-            </span>
-          ) : (
-            <svg className={styles.listenIcon} width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M4 9v6h4l5 4V5L8 9H4z" />
+      <p className={styles.sectionLabel}>Two ways in</p>
+      <nav className={styles.modes} aria-label="Modes">
+        <a className={`${styles.mode} ${styles.modeTravel}`} href="#/translate">
+          <Arrow className={styles.modeArrow} />
+          <span className={styles.modeIcon} aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 8h7M5 8a3 3 0 0 0 6 0M8 5V3M8 8c0 4-1.5 7-3 9" />
+              <path d="M13 19l4-9 4 9M14.5 16h5" />
             </svg>
-          )}
-          {speakState === 'playing' ? 'Stop' : 'Listen'}
-        </button>
-
-        {progress !== null && (
-          <svg className={styles.walk} viewBox="0 0 280 16" preserveAspectRatio="none" aria-hidden="true">
-            <line x1="2" y1="8" x2="278" y2="8" stroke="var(--hair)" strokeWidth="1.5" strokeDasharray="1 6" strokeLinecap="round" />
-            <line x1="2" y1="8" x2={2 + progress * 276} y2="8" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" />
-            <circle cx={2 + progress * 276} cy="8" r="4" fill="var(--accent)" />
-            <circle cx="278" cy="8" r="3" fill="none" stroke="var(--muted)" strokeWidth="1.5" />
-          </svg>
-        )}
-      </div>
-
-      <div className={styles.hair} />
-
-      {/* ready to review — typographic, no card */}
-      <div className={styles.band}>
-        <span className={styles.kick}>{due > 0 ? 'Ready to review' : 'All caught up'}</span>
-        <div className={styles.reviewHead}>
-          <span className={styles.reviewNum}>{due}</span>
-          <div className={styles.lotuses}>
-            <Lotus stage={0} size={22} dim />
-            <Lotus stage={1} size={26} />
-            <Lotus stage={2} size={30} />
-          </div>
-        </div>
-        <p className={styles.reviewSub}>
-          {due > 0
-            ? `phrases · about ${reviewMinutes} ${reviewMinutes === 1 ? 'minute' : 'minutes'}, together`
-            : 'Nothing due right now — browse your deck.'}
-        </p>
-        <a className={styles.beginLink} href={due > 0 ? '#/play' : '#/deck'}>
-          {due > 0 ? 'Begin review' : 'Browse phrases'}
-          <Arrow />
+          </span>
+          <span className={styles.modeName}>Travel</span>
+          <span className={styles.modeDesc}>Translate out loud and flash show-cards at the market.</span>
         </a>
-      </div>
 
-      <div className={styles.hair} />
+        <a className={`${styles.mode} ${styles.modeLearn}`} href="#/play">
+          <Arrow className={styles.modeArrow} />
+          <span className={styles.modeIcon} aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 5a2 2 0 0 1 2-2h6v16H6a2 2 0 0 0-2 2zM20 5a2 2 0 0 0-2-2h-6v16h6a2 2 0 0 1 2 2z" />
+            </svg>
+          </span>
+          <span className={styles.modeName}>Learn</span>
+          <span className={styles.modeDesc}>Script, tones and phrases that stick, one card at a time.</span>
+        </a>
+      </nav>
 
-      {/* quests */}
-      <div className={styles.band}>
-        <div className={styles.questHead}>
-          <span className={styles.kick}>Today, together</span>
-          <span className={styles.questCount}>
-            {questsDone}/{quests.length}
+      {kidMode && (
+        <a className={styles.kidCard} href="#/play" aria-label="Kid Play — tap to practice tones">
+          <span className={styles.kidEmoji} aria-hidden="true">🐘</span>
+          <span className={styles.kidText}>
+            <span className={styles.kidTitle}>Kid Play</span>
+            <span className={styles.kidSub}>Tap to practice tones!</span>
+          </span>
+        </a>
+      )}
+
+      <section className={styles.progress} aria-label="Today's reviews">
+        <svg className={styles.ring} width="56" height="56" viewBox="0 0 56 56">
+          <circle className={styles.ringTrack} cx="28" cy="28" r={r} fill="none" strokeWidth="5" />
+          <circle
+            className={styles.ringFill}
+            cx="28"
+            cy="28"
+            r={r}
+            fill="none"
+            strokeWidth="5"
+            strokeDasharray={circ}
+            strokeDashoffset={circ * (1 - pct)}
+          />
+          <text className={styles.ringLabel} x="28" y="28" textAnchor="middle" dominantBaseline="central">
+            {reviewsDone}/{reviewsTotal}
+          </text>
+        </svg>
+        <div className={styles.progressText}>
+          <span className={styles.progressTitle}>Daily phrases</span>
+          <span className={styles.progressSub}>
+            {reviewsTotal === 0
+              ? 'No cards yet — start learning!'
+              : `${reviewsTotal - reviewsDone} cards left in today’s deck.`}
           </span>
         </div>
+        <a className={styles.reviewBtn} href="#/deck">
+          Review
+        </a>
+      </section>
+
+      <section className={styles.quests} aria-label="Daily quests">
+        <p className={styles.sectionLabel}>Daily quests</p>
         <ul className={styles.questList}>
           {quests.map(({ quest, done }) => (
             <li
               key={quest.id}
-              className={`${styles.questItem} ${done ? styles.questItemDone : ''}`}
+              className={`${styles.questItem} ${done ? styles.questDone : ''}`}
             >
-              <span className={`${styles.questDot} ${done ? styles.questDotDone : ''}`} />
-              <span className={styles.questText}>{quest.desc}</span>
+              <span className={styles.questIcon} aria-hidden="true">
+                {quest.icon}
+              </span>
+              <span className={styles.questText}>
+                <span className={styles.questLabel}>{quest.label}</span>
+                <span className={styles.questDesc}>{quest.desc}</span>
+              </span>
+              {done && (
+                <span className={styles.questCheck} aria-label="Completed">
+                  ✓
+                </span>
+              )}
             </li>
           ))}
         </ul>
-
-        {kidMode && (
-          <a className={styles.kidLink} href="#/play">
-            Kid Play
-            <Arrow />
-          </a>
-        )}
-      </div>
-
-      <div className={styles.spacer} />
-
-      {/* family flame — minimal */}
-      {family && family.members.length >= 2 && (
-        <div
-          className={`${styles.band} ${styles.family} ${
-            family.allPracticedToday ? styles.familyLit : ''
-          }`}
-        >
-          <svg className={styles.flameIcon} width="16" height="20" viewBox="0 0 22 26" fill="currentColor" aria-hidden="true">
-            <path d="M11 2 C13 8 19 9 17 16 C16 21 13 24 11 24 C9 24 6 21 5 16 C3.5 10 9 9 11 2Z" />
-          </svg>
-          <span className={styles.familyLabel}>
-            {family.allPracticedToday
-              ? 'Family flame · all in today'
-              : `Family flame · lit ${family.flameDays} ${family.flameDays === 1 ? 'day' : 'days'}`}
-          </span>
-          <div className={styles.avatars}>
-            {family.members.slice(0, 4).map((m, i) => (
-              <span
-                key={m.id}
-                className={`${styles.avatar} ${m.practicedToday ? '' : styles.avatarOff}`}
-                style={{ background: AVATAR_INK[i % AVATAR_INK.length] }}
-                title={`${m.name} ${m.practicedToday ? '✓' : '…'}`}
-              >
-                {m.name.charAt(0).toUpperCase()}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      </section>
     </div>
   );
 };
+
+function Arrow({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 17 17 7M9 7h8v8" />
+    </svg>
+  );
+}
 
 export default Home;

@@ -195,7 +195,7 @@ const RequireMembership: React.FC = () => {
   return <Outlet />;
 };
 
-type TabId = 'today' | 'translate' | 'play' | 'deck';
+type TabId = 'today' | 'translate' | 'play' | 'deck' | 'settings';
 
 const NavIcon: React.FC<{ name: TabId }> = ({ name }) => {
   const p = {
@@ -228,6 +228,13 @@ const NavIcon: React.FC<{ name: TabId }> = ({ name }) => {
         <circle cx="18" cy="14" r="0.6" fill="currentColor" />
       </svg>
     );
+  if (name === 'settings')
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" {...p}>
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+      </svg>
+    );
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" {...p}>
       <path d="M5 4h10a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 2-2z" />
@@ -241,6 +248,7 @@ const TABS: { id: TabId; label: string; href: string; path: string }[] = [
   { id: 'translate', label: 'Translate', href: '#/translate', path: '/translate' },
   { id: 'play', label: 'Play', href: '#/play', path: '/play' },
   { id: 'deck', label: 'Deck', href: '#/deck', path: '/deck' },
+  { id: 'settings', label: 'Settings', href: '#/settings', path: '/settings' },
 ];
 
 const BottomNav: React.FC = () => {
