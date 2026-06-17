@@ -4,7 +4,6 @@ import { tts, type Syllable } from '../worker/api';
 import { getCachedAudio, setCachedAudio } from '../data/audioCache';
 import { BUILT_IN_PHRASES } from '../data/phrases';
 import { getDefaultVoice, VOICE_NAME } from '../worker/voice';
-import GearLink from '../components/GearLink';
 import styles from './ToneTrace.module.css';
 
 type RecordingState = 'idle' | 'recording' | 'done';
@@ -368,7 +367,6 @@ const ToneTrace: React.FC = () => {
         <p className={styles.rom}>
           {syllable.rom} · {TONE[tone].label} tone
         </p>
-        <GearLink />
       </header>
 
       <div className={styles.pitchStaff}>

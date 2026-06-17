@@ -7,7 +7,8 @@ import { getCachedAudio, setCachedAudio } from '../data/audioCache';
 import { getCachedTranslation } from '../data/translationCache';
 import { putHistory, putPhrase, getHistory, historyId, type PhrasebookEntry, type HistoryEntry } from '../data/store';
 import { BUILT_IN_PHRASES } from '../data/phrases';
-import GearLink from '../components/GearLink';
+import MascotElephant from '../components/MascotElephant';
+import mascotStyles from '../components/MascotElephant.module.css';
 import styles from './Translate.module.css';
 
 type Particle = 'khrap' | 'kha' | 'neutral';
@@ -508,11 +509,18 @@ const Translate: React.FC = () => {
   return (
     <div className={styles.screen}>
       <header className={styles.header}>
-        <span className={styles.eyebrow}>Travel companion</span>
-        <h1 className={styles.title}>
-          Translate <span className={styles.titleThai}>แปล</span>
-        </h1>
-        <GearLink />
+        <div className={styles.greeting}>
+          <span className={styles.eyebrow}>Travel companion</span>
+          <h1 className={styles.title}>
+            Translate <span className={styles.titleThai}>แปล</span>
+          </h1>
+        </div>
+        <MascotElephant
+          size={200}
+          mood="happy"
+          landscape
+          className={`${mascotStyles.mascot} ${styles.headerMascot}`}
+        />
       </header>
 
       <button

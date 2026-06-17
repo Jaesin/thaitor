@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { TONE, type ToneKey } from '../themes/constants';
 import { tts } from '../worker/api';
 import { getDailyProgress, completeQuest } from '../data/quests';
@@ -24,19 +24,14 @@ interface Phrase {
 }
 
 function getPhraseOfTheDay(): Phrase {
-  // Use day-of-year so it changes daily but is stable within a day
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
-  const entry = BUILT_IN_PHRASES[dayOfYear % BUILT_IN_PHRASES.length];
+  // Pick a random phrase on each call so it changes every page load.
+  const entry = BUILT_IN_PHRASES[Math.floor(Math.random() * BUILT_IN_PHRASES.length)];
   return {
     syllables: entry.syllables.map((s) => ({ thai: s.th, roman: s.rom, tone: s.tone })),
     meaning: entry.en,
     literal: entry.rtgs ?? entry.syllables.map((s) => s.rom).join('-'),
   };
 }
-
-const PHRASE_OF_THE_DAY = getPhraseOfTheDay();
 
 function ToneGlyph({ tone }: { tone: ToneKey }) {
   return (
@@ -45,8 +40,6 @@ function ToneGlyph({ tone }: { tone: ToneKey }) {
     </svg>
   );
 }
-
-const PHRASE_THAI = PHRASE_OF_THE_DAY.syllables.map((s) => s.thai).join('');
 
 type TripStatus =
   | { kind: 'none' }
@@ -92,6 +85,12 @@ function getTripStatus(): TripStatus {
 }
 
 const Home: React.FC = () => {
+  // Selected once per mount so each page load shows a fresh random phrase.
+  const phraseOfTheDay = useMemo(() => getPhraseOfTheDay(), []);
+  const phraseThai = useMemo(
+    () => phraseOfTheDay.syllables.map((s) => s.thai).join(''),
+    [phraseOfTheDay],
+  );
   const [speakState, setSpeakState] = useState<'idle' | 'loading' | 'playing'>('idle');
   const [audioReady, setAudioReady] = useState(false);
   const [quests, setQuests] = useState(() => getDailyProgress());
@@ -108,7 +107,7 @@ const Home: React.FC = () => {
     let cancelled = false;
     (async () => {
       try {
-        const { audioContent } = await tts({ text: PHRASE_THAI });
+        const { audioContent } = await tts({ text: phraseThai });
         const binary = atob(audioContent);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -175,7 +174,7 @@ const Home: React.FC = () => {
   // higher-quality TTS audio never loads (e.g. a non-member whose TTS request
   // the Worker blocks) or fails to play.
   function playViaSpeech() {
-    const utterance = new SpeechSynthesisUtterance(PHRASE_THAI);
+    const utterance = new SpeechSynthesisUtterance(phraseThai);
     // Thai lang is required: without it Firefox/Safari pick a non-Thai default
     // voice and produce no audible output for Thai script (silently, no error).
     utterance.lang = 'th-TH';
@@ -345,7 +344,7 @@ const Home: React.FC = () => {
         </div>
 
         <div className={styles.syllables}>
-          {PHRASE_OF_THE_DAY.syllables.map((syll, i) => (
+          {phraseOfTheDay.syllables.map((syll, i) => (
             <div className={styles.syllable} key={i}>
               <ToneGlyph tone={syll.tone} />
               <span className={styles.syllThai} lang="th">
@@ -356,8 +355,8 @@ const Home: React.FC = () => {
           ))}
         </div>
 
-        <p className={styles.phraseMeaning}>{PHRASE_OF_THE_DAY.meaning}</p>
-        <p className={styles.phraseSub}>{PHRASE_OF_THE_DAY.literal}</p>
+        <p className={styles.phraseMeaning}>{phraseOfTheDay.meaning}</p>
+        <p className={styles.phraseSub}>{phraseOfTheDay.literal}</p>
       </section>
 
       <p className={styles.sectionLabel}>Two ways in</p>

@@ -11,7 +11,6 @@ import {
   type SRSRecord,
 } from '../data/store';
 import { gradePhrase, type Grade } from '../data/srs';
-import GearLink from '../components/GearLink';
 import styles from './EchoBooth.module.css';
 
 const RECORD_MAX_MS = 10000;
@@ -293,7 +292,6 @@ const EchoBooth: React.FC = () => {
           {phrase.th}
         </p>
         <p className={styles.en}>{phrase.en}</p>
-        <GearLink />
       </header>
 
       <section className={styles.syllables} aria-label="Syllable tones">

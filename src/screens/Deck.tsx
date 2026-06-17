@@ -17,7 +17,6 @@ import {
   awardFieldBadge,
   type FieldBadgeRecord,
 } from '../data/badges';
-import GearLink from '../components/GearLink';
 import styles from './Deck.module.css';
 
 const LONG_PRESS_MS = 500;
@@ -254,7 +253,6 @@ const Deck: React.FC = () => {
         <h1 className={styles.title}>
           Your Thai <span className={styles.titleThai}>ภาษาไทยของคุณ</span>
         </h1>
-        <GearLink />
       </header>
 
       <div className={styles.segment} role="tablist" aria-label="View">

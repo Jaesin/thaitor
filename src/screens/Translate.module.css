@@ -14,11 +14,21 @@
 
 /* ---- header ---- */
 .header {
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.greeting {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding-right: 48px;
+}
+
+.headerMascot {
+  flex: none;
+  margin-left: auto;
 }
 
 .eyebrow {

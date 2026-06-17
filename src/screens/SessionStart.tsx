@@ -1,6 +1,5 @@
 import type { SessionMakeup } from '../data/srs';
 import { isRungUnlocked } from '../data/scriptProgress';
-import GearLink from '../components/GearLink';
 import MascotElephant from '../components/MascotElephant';
 import mascotStyles from '../components/MascotElephant.module.css';
 import styles from './SessionStart.module.css';
@@ -59,7 +58,6 @@ const SessionStart: React.FC<SessionStartProps> = ({ makeup, onStart, kidMode = 
         <span className={styles.eyebrow}>Session</span>
         <h1 className={styles.title}>Ready to practice?</h1>
         <p className={styles.eta}>~{makeup.etaMin} min</p>
-        <GearLink />
       </header>
 
       <section className={styles.stats} aria-label="Session makeup">

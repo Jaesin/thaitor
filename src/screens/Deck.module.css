@@ -13,11 +13,9 @@
 }
 
 .header {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding-right: 48px;
 }
 
 .eyebrow {
