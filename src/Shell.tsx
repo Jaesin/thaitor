@@ -1,5 +1,14 @@
-import { useEffect, useState } from 'react';
-import { HashRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  HashRouter,
+  Routes,
+  Route,
+  Outlet,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useOutletContext,
+} from 'react-router-dom';
 import { useMember } from './auth/useMember';
 import Home from './screens/Home';
 import Translate from './screens/Translate';
@@ -24,17 +33,6 @@ import {
 } from './data/profiles';
 import styles from './Shell.module.css';
 
-type PlayPhase =
-  | 'start'
-  | 'listen'
-  | 'build'
-  | 'tonepop'
-  | 'readtone'
-  | 'dojo'
-  | 'echo'
-  | 'script'
-  | 'summary';
-
 const OfflineBanner: React.FC = () => {
   const [offline, setOffline] = useState(!navigator.onLine);
   useEffect(() => {
@@ -55,16 +53,50 @@ const OfflineBanner: React.FC = () => {
   );
 };
 
-const PlayHub: React.FC = () => {
-  const [phase, setPhase] = useState<PlayPhase>('start');
-  const [makeup, setMakeup] = useState<SessionMakeup | null>(null);
-  const [result, setResult] = useState<SessionResult | null>(null);
+/**
+ * The Play flow is a set of distinct screens, each with its own hash route under
+ * `/play` (see the route table below). The route — not component state — decides
+ * which screen renders, so a screen is reachable and refreshable by URL.
+ *
+ * The one piece of genuinely transient data is the just-finished session result
+ * that the summary screen reports on. It can't live in the URL, so this layout
+ * holds it and hands it down (plus Kid Mode) through the outlet context. A drill
+ * calls `finish(result)`, which stashes the result and navigates to the summary;
+ * landing on `/play/summary` with no result (a refresh or deep link) bounces back
+ * to the session start.
+ */
+type PlayContext = {
+  kidMode: boolean;
+  result: SessionResult | null;
+  finish: (result: SessionResult) => void;
+};
+
+const PlayLayout: React.FC = () => {
+  const navigate = useNavigate();
   const [kidMode] = useState(() => getKidMode());
+  const [result, setResult] = useState<SessionResult | null>(null);
+
+  const finish = useCallback(
+    (r: SessionResult) => {
+      setResult(r);
+      navigate('/play/summary');
+    },
+    [navigate],
+  );
+
+  const ctx: PlayContext = { kidMode, result, finish };
+  return <Outlet context={ctx} />;
+};
+
+const usePlay = () => useOutletContext<PlayContext>();
+
+const PlayStart: React.FC = () => {
+  const { kidMode } = usePlay();
+  const navigate = useNavigate();
+  const [makeup, setMakeup] = useState<SessionMakeup | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    if (phase !== 'start') return;
-    setMakeup(null);
     (async () => {
       const next = await buildSession();
       if (!cancelled) setMakeup(next);
@@ -72,74 +104,7 @@ const PlayHub: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [phase]);
-
-  if (phase === 'summary' && result) {
-    return (
-      <SessionSummary
-        result={result}
-        onDone={() => {
-          setResult(null);
-          setPhase('start');
-        }}
-      />
-    );
-  }
-
-  if (phase === 'listen') {
-    return (
-      <AudioPick
-        onDone={(r) => {
-          setResult(r);
-          setPhase('summary');
-        }}
-      />
-    );
-  }
-
-  if (phase === 'build') {
-    return (
-      <Exercise
-        onDone={(r) => {
-          setResult(r);
-          setPhase('summary');
-        }}
-      />
-    );
-  }
-
-  if (phase === 'tonepop' || phase === 'readtone') {
-    return (
-      <TonePop
-        kidMode={kidMode}
-        mode={phase === 'readtone' ? 'read' : 'hear'}
-        onDone={(r) => {
-          setResult(r);
-          setPhase('summary');
-        }}
-      />
-    );
-  }
-
-  if (phase === 'dojo') {
-    return (
-      <TonePairDojo
-        kidMode={kidMode}
-        onDone={(r) => {
-          setResult(r);
-          setPhase('summary');
-        }}
-      />
-    );
-  }
-
-  if (phase === 'echo') {
-    return <EchoBooth />;
-  }
-
-  if (phase === 'script') {
-    return <ScriptLadder />;
-  }
+  }, []);
 
   if (!makeup) {
     return (
@@ -153,9 +118,36 @@ const PlayHub: React.FC = () => {
     <SessionStart
       makeup={makeup}
       kidMode={kidMode}
-      onStart={(mode) => setPhase(mode)}
+      onStart={(mode) => navigate(`/play/${mode}`)}
     />
   );
+};
+
+const PlayAudioPick: React.FC = () => {
+  const { finish } = usePlay();
+  return <AudioPick onDone={finish} />;
+};
+
+const PlayExercise: React.FC = () => {
+  const { finish } = usePlay();
+  return <Exercise onDone={finish} />;
+};
+
+const PlayTonePop: React.FC<{ mode: 'hear' | 'read' }> = ({ mode }) => {
+  const { kidMode, finish } = usePlay();
+  return <TonePop kidMode={kidMode} mode={mode} onDone={finish} />;
+};
+
+const PlayDojo: React.FC = () => {
+  const { kidMode, finish } = usePlay();
+  return <TonePairDojo kidMode={kidMode} onDone={finish} />;
+};
+
+const PlaySummary: React.FC = () => {
+  const { result } = usePlay();
+  const navigate = useNavigate();
+  if (!result) return <Navigate to="/play" replace />;
+  return <SessionSummary result={result} onDone={() => navigate('/play')} />;
 };
 
 /**
@@ -258,7 +250,7 @@ const BottomNav: React.FC = () => {
       {TABS.map((tab) => {
         const active =
           pathname === tab.path ||
-          (tab.path === '/translate' && pathname.startsWith('/translate'));
+          (tab.path !== '/' && pathname.startsWith(`${tab.path}/`));
         return (
           <a
             key={tab.id}
@@ -307,7 +299,21 @@ const Shell: React.FC = () => {
             <Route element={<RequireMembership />}>
               <Route path="/translate" element={<Translate />} />
               <Route path="/translate/:from/:to" element={<Translate />} />
-              <Route path="/play" element={<PlayHub />} />
+              {/* Each Play screen owns a hash route; the route is the source of
+                  truth for which one renders (see PlayLayout). */}
+              <Route path="/play" element={<PlayLayout />}>
+                <Route index element={<PlayStart />} />
+                <Route path="listen" element={<PlayAudioPick />} />
+                <Route path="build" element={<PlayExercise />} />
+                <Route path="tonepop" element={<PlayTonePop mode="hear" />} />
+                <Route path="readtone" element={<PlayTonePop mode="read" />} />
+                <Route path="dojo" element={<PlayDojo />} />
+                <Route path="echo" element={<EchoBooth />} />
+                <Route path="script" element={<ScriptLadder />} />
+                <Route path="script/:rungId" element={<ScriptLadder />} />
+                <Route path="script/:rungId/:mode" element={<ScriptLadder />} />
+                <Route path="summary" element={<PlaySummary />} />
+              </Route>
               <Route path="/deck" element={<Deck />} />
               <Route path="/trace" element={<ToneTrace />} />
             </Route>

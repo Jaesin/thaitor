@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { RUNGS, rungConsonants, type Rung } from '../data/script';
 import { rungState, setRungCleared, type RungState } from '../data/scriptProgress';
 import { getAllSRSRecords } from '../data/store';
@@ -11,9 +12,7 @@ import styles from './ScriptLadder.module.css';
 
 // The three drills available once a consonant rung is selected.
 type ScriptMode = 'pop' | 'echo' | 'pairs';
-
-// Track which rung just bloomed (cleared) so we can play the stage animation.
-type ActiveSession = { rung: Rung; mode: ScriptMode };
+const SCRIPT_MODES: ScriptMode[] = ['pop', 'echo', 'pairs'];
 
 const STATE_LABEL: Record<RungState, string> = {
   locked: 'Locked',
@@ -31,55 +30,67 @@ function tone(rung: Rung): { ink: string; soft: string; base: string } {
 
 const ScriptLadder: React.FC = () => {
   const [kidMode] = useState(() => getKidMode());
-  const [active, setActive] = useState<ActiveSession | null>(null);
-  // A consonant rung whose mode chooser is open (before a drill is picked).
-  const [choosing, setChoosing] = useState<Rung | null>(null);
-  const [bloom, setBloom] = useState<string | null>(null);
-  // Bump to recompute lock/clear states after a session.
-  const [version, setVersion] = useState(0);
+  const navigate = useNavigate();
+  const location = useLocation();
+  // The route is the source of truth for which view shows: the ladder list at
+  // `/play/script`, a rung's drill chooser at `/play/script/:rungId`, and an
+  // active drill at `/play/script/:rungId/:mode`.
+  const { rungId, mode } = useParams<{ rungId: string; mode: string }>();
+
+  // The just-cleared rung whose stage animation should play. It can't live in
+  // the URL (it's a one-shot flourish), so a finishing drill passes it back
+  // through navigation state when it returns to the ladder.
+  const [bloom, setBloom] = useState<string | null>(
+    () => (location.state as { bloom?: string } | null)?.bloom ?? null,
+  );
 
   const states = RUNGS.map((r) => ({ rung: r, state: rungState(r.id) }));
 
-  const handleStart = useCallback((rung: Rung) => {
-    if (rung.external) {
-      // Tones live in the Tone Pop arcade; point the user there.
-      window.location.hash = '#/play';
-      return;
-    }
-    if (rungConsonants(rung.id).length === 0) {
-      // Vowel / tone-rule rungs have no Script Pop drill yet — clear on visit
-      // so progression can continue, and bloom.
-      setRungCleared(rung.id);
-      setBloom(rung.id);
-      setVersion((v) => v + 1);
-      return;
-    }
-    // Consonant rung — let the player pick which drill to play.
-    setChoosing(rung);
-  }, []);
-
-  const handlePickMode = useCallback((rung: Rung, mode: ScriptMode) => {
-    setChoosing(null);
-    setActive({ rung, mode });
-  }, []);
-
-  const handleSessionDone = useCallback((rung: Rung) => {
-    setActive(null);
-    // Mark the rung cleared once every consonant in it has an SRS record
-    // (graded at least once) — accumulated across as many sessions as it takes.
-    // A 6-round session can't cover a 9- or 24-letter rung in one go, so we
-    // check the persistent SRS store rather than just this run.
-    void (async () => {
-      const ids = rungConsonants(rung.id).map((c) => c.id);
-      const graded = new Set((await getAllSRSRecords()).map((r) => r.phraseId));
-      const allDrilled = ids.length > 0 && ids.every((id) => graded.has(id));
-      if (allDrilled && rungState(rung.id) !== 'cleared') {
+  const handleStart = useCallback(
+    (rung: Rung) => {
+      if (rung.external) {
+        // Tones live in the Tone Pop arcade; point the user there.
+        navigate('/play');
+        return;
+      }
+      if (rungConsonants(rung.id).length === 0) {
+        // Vowel / tone-rule rungs have no Script Pop drill yet — clear on visit
+        // so progression can continue, and bloom.
         setRungCleared(rung.id);
         setBloom(rung.id);
+        return;
       }
-      setVersion((v) => v + 1);
-    })();
-  }, []);
+      // Consonant rung — let the player pick which drill to play.
+      navigate(`/play/script/${rung.id}`);
+    },
+    [navigate],
+  );
+
+  const handlePickMode = useCallback(
+    (rung: Rung, picked: ScriptMode) => {
+      navigate(`/play/script/${rung.id}/${picked}`);
+    },
+    [navigate],
+  );
+
+  const handleSessionDone = useCallback(
+    (rung: Rung) => {
+      // Mark the rung cleared once every consonant in it has an SRS record
+      // (graded at least once) — accumulated across as many sessions as it takes.
+      // A 6-round session can't cover a 9- or 24-letter rung in one go, so we
+      // check the persistent SRS store rather than just this run.
+      void (async () => {
+        const ids = rungConsonants(rung.id).map((c) => c.id);
+        const graded = new Set((await getAllSRSRecords()).map((r) => r.phraseId));
+        const allDrilled = ids.length > 0 && ids.every((id) => graded.has(id));
+        const cleared = allDrilled && rungState(rung.id) !== 'cleared';
+        if (cleared) setRungCleared(rung.id);
+        // Return to the ladder; hand the bloom back so it animates on arrival.
+        navigate('/play/script', cleared ? { state: { bloom: rung.id } } : undefined);
+      })();
+    },
+    [navigate],
+  );
 
   // Clear the bloom highlight after the animation.
   useEffect(() => {
@@ -88,25 +99,34 @@ const ScriptLadder: React.FC = () => {
     return () => clearTimeout(t);
   }, [bloom]);
 
-  if (active) {
-    const pool = rungConsonants(active.rung.id);
-    if (active.mode === 'pairs') {
+  // Resolve the rung named in the URL (if any). An unknown id is a stale/bad
+  // link — fall back to the ladder.
+  const routedRung = rungId ? RUNGS.find((r) => r.id === rungId) ?? null : null;
+  if (rungId && !routedRung) return <Navigate to="/play/script" replace />;
+
+  // Active drill: `/play/script/:rungId/:mode`.
+  if (routedRung && mode) {
+    if (!SCRIPT_MODES.includes(mode as ScriptMode)) {
+      return <Navigate to={`/play/script/${routedRung.id}`} replace />;
+    }
+    const pool = rungConsonants(routedRung.id);
+    if (mode === 'pairs') {
       return (
         <ScriptPairs
           pool={pool}
           kidMode={kidMode}
-          rungTitle={active.rung.title}
-          onDone={() => setActive(null)}
+          rungTitle={routedRung.title}
+          onDone={() => navigate('/play/script')}
         />
       );
     }
-    if (active.mode === 'echo') {
+    if (mode === 'echo') {
       return (
         <EchoTiles
           pool={pool}
           kidMode={kidMode}
-          rungTitle={active.rung.title}
-          onDone={() => handleSessionDone(active.rung)}
+          rungTitle={routedRung.title}
+          onDone={() => handleSessionDone(routedRung)}
         />
       );
     }
@@ -114,13 +134,15 @@ const ScriptLadder: React.FC = () => {
       <ScriptPop
         pool={pool}
         kidMode={kidMode}
-        rungTitle={active.rung.title}
-        onDone={() => handleSessionDone(active.rung)}
+        rungTitle={routedRung.title}
+        onDone={() => handleSessionDone(routedRung)}
       />
     );
   }
 
-  if (choosing) {
+  // Drill chooser: `/play/script/:rungId`.
+  if (routedRung) {
+    const choosing = routedRung;
     return (
       <div className={styles.screen}>
         <header className={styles.header}>
@@ -158,7 +180,7 @@ const ScriptLadder: React.FC = () => {
           </button>
         </div>
 
-        <button type="button" className={styles.backBtn} onClick={() => setChoosing(null)}>
+        <button type="button" className={styles.backBtn} onClick={() => navigate('/play/script')}>
           Back to ladder
         </button>
       </div>
@@ -166,7 +188,7 @@ const ScriptLadder: React.FC = () => {
   }
 
   return (
-    <div className={styles.screen} key={version}>
+    <div className={styles.screen}>
       <header className={styles.header}>
         <span className={styles.eyebrow}>Reading track</span>
         <h1 className={styles.title}>
