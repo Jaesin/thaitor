@@ -18,6 +18,7 @@ import TonePop from './screens/TonePop';
 import TonePairDojo from './screens/TonePairDojo';
 import EchoBooth from './screens/EchoBooth';
 import ScriptLadder from './screens/ScriptLadder';
+import AlphabetChart from './screens/AlphabetChart';
 import ToneTrace from './screens/ToneTrace';
 import SessionStart from './screens/SessionStart';
 import SessionSummary from './screens/SessionSummary';
@@ -312,6 +313,7 @@ const Shell: React.FC = () => {
                 <Route path="script" element={<ScriptLadder />} />
                 <Route path="script/:rungId" element={<ScriptLadder />} />
                 <Route path="script/:rungId/:mode" element={<ScriptLadder />} />
+                <Route path="alphabet" element={<AlphabetChart />} />
                 <Route path="summary" element={<PlaySummary />} />
               </Route>
               <Route path="/deck" element={<Deck />} />

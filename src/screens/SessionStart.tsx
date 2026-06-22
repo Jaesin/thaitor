@@ -130,6 +130,10 @@ const SessionStart: React.FC<SessionStartProps> = ({ makeup, onStart, kidMode = 
           <span className={styles.modeName}>Tone Trace</span>
           <span className={styles.modeHint}>Mirror your pitch contour</span>
         </a>
+        <a className={`${styles.modeBtn} ${styles.modeBtnAlt}`} href="#/play/alphabet">
+          <span className={styles.modeName}>Thai Alphabet</span>
+          <span className={styles.modeHint}>Read the script in ก→ฮ order</span>
+        </a>
       </section>
 
       <p className={styles.note}>No timer. No streak pressure.</p>

@@ -1,0 +1,284 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 18px 32px;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eyebrow {
+  font-family: var(--ui);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.title {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.titleThai {
+  font-family: var(--thai);
+  color: var(--accent);
+}
+
+.sub {
+  font-family: var(--ui);
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ── Class legend ─────────────────────────────────────────── */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legendDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  flex: 0 0 auto;
+}
+
+.legendText {
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.legendThai {
+  font-family: var(--thai);
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.legendNote {
+  font-family: var(--ui);
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--muted);
+  margin: -4px 2px 0;
+}
+
+/* ── Section headers ──────────────────────────────────────── */
+.sectionTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 14px 0 0;
+}
+
+.sectionThai {
+  font-family: var(--thai);
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.sectionCount {
+  margin-left: auto;
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+/* ── Grid + tiles ─────────────────────────────────────────── */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.gridKid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  min-height: 92px;
+  padding: 12px 8px;
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.08s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.tile:active {
+  transform: scale(0.96);
+}
+
+.tileSpeaking {
+  border-color: var(--tile-base, var(--accent));
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--tile-base, var(--accent)) 28%, transparent);
+}
+
+/* Consonant tiles carry their class color. */
+.consTile {
+  position: relative;
+  border-color: color-mix(in oklch, var(--tile-base) 45%, var(--hair));
+  background: color-mix(in oklch, var(--tile-soft) 55%, var(--surface));
+}
+
+.picto {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.pictoSlot {
+  height: 30px;
+}
+
+.consGlyph {
+  font-family: var(--thai);
+  font-size: 40px;
+  line-height: 1.15;
+  font-weight: 600;
+}
+
+.gridKid .consGlyph {
+  font-size: 52px;
+}
+
+.gridKid .picto {
+  width: 40px;
+  height: 40px;
+}
+
+.consName {
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tile-ink, var(--ink));
+}
+
+.consExample {
+  font-family: var(--thai);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.obsolete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-family: var(--ui);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+
+/* Vowels + tone marks. */
+.vowelForm {
+  font-family: var(--thai);
+  font-size: 38px;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.markGlyph {
+  font-family: var(--thai);
+  font-size: 42px;
+  line-height: 1.1;
+  color: var(--accent);
+}
+
+.markThai {
+  font-family: var(--thai);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.roman {
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.meta {
+  font-family: var(--ui);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+/* ── Footer ───────────────────────────────────────────────── */
+.credit {
+  font-family: var(--ui);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  margin: 10px 0 0;
+}
+
+.credit a {
+  color: var(--accent);
+}
+
+.backBtn {
+  font-family: var(--ui);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  align-self: center;
+  min-width: 220px;
+  margin-top: 6px;
+}

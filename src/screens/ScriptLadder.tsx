@@ -195,6 +195,27 @@ const ScriptLadder: React.FC = () => {
           Script Ladder <span className={styles.titleThai}>บันไดอักษร</span>
         </h1>
         <p className={styles.sub}>Climb the Thai writing system, one rung at a time.</p>
+        <a
+          className={styles.chartLink}
+          href="#/play/alphabet"
+          aria-label="View the Thai alphabet"
+          title="Thai alphabet"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+        </a>
       </header>
 
       <ol className={styles.ladder}>

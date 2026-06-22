@@ -4,6 +4,7 @@ import { tts, type Syllable } from '../worker/api';
 import { getCachedAudio, setCachedAudio } from '../data/audioCache';
 import { BUILT_IN_PHRASES } from '../data/phrases';
 import { getDefaultVoice, VOICE_NAME } from '../worker/voice';
+import { requestMicStream } from '../data/mic';
 import styles from './ToneTrace.module.css';
 
 type RecordingState = 'idle' | 'recording' | 'done';
@@ -314,7 +315,7 @@ const ToneTrace: React.FC = () => {
     if (recordingState === 'recording') return;
     setMicError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await requestMicStream();
       const recorder = new MediaRecorder(stream);
       recorderRef.current = recorder;
       const chunks: BlobPart[] = [];
@@ -331,8 +332,12 @@ const ToneTrace: React.FC = () => {
           recorderRef.current.stop();
         }
       }, RECORD_MS);
-    } catch {
-      setMicError('Microphone access is needed to record. Check your browser permissions.');
+    } catch (err) {
+      setMicError(
+        err instanceof Error
+          ? err.message
+          : 'Couldn’t start the microphone. Check your browser permissions and try again.',
+      );
       setRecordingState('idle');
     }
   }, [recordingState, finishRecording]);

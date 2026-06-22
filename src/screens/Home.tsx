@@ -416,12 +416,12 @@ const Home: React.FC = () => {
           <span className={styles.progressTitle}>Daily phrases</span>
           <span className={styles.progressSub}>
             {reviewsTotal === 0
-              ? 'No cards yet — start learning!'
+              ? 'New to the script? Browse the alphabet first.'
               : `${reviewsTotal - reviewsDone} cards left in today’s deck.`}
           </span>
         </div>
-        <a className={styles.reviewBtn} href="#/deck">
-          Review
+        <a className={styles.reviewBtn} href={reviewsTotal === 0 ? '#/play/alphabet' : '#/deck'}>
+          {reviewsTotal === 0 ? 'Alphabet' : 'Review'}
         </a>
       </section>
 

@@ -11,6 +11,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  position: relative;
+  padding-right: 52px;
 }
 
 .eyebrow {
@@ -39,6 +41,35 @@
   font-size: 14px;
   color: var(--muted);
   margin: 0;
+}
+
+.chartLink {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background: var(--surface);
+  color: var(--accent);
+  transition: border-color 0.15s ease, transform 0.08s ease;
+}
+
+.chartLink:hover {
+  border-color: var(--accent);
+}
+
+.chartLink:active {
+  transform: scale(0.94);
+}
+
+.chartLink svg {
+  width: 20px;
+  height: 20px;
 }
 
 .modeList {

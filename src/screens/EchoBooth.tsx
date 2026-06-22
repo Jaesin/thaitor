@@ -11,6 +11,7 @@ import {
   type SRSRecord,
 } from '../data/store';
 import { gradePhrase, type Grade } from '../data/srs';
+import { requestMicStream } from '../data/mic';
 import styles from './EchoBooth.module.css';
 
 const RECORD_MAX_MS = 10000;
@@ -209,7 +210,7 @@ const EchoBooth: React.FC = () => {
     setMicError(null);
     clearRecording();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await requestMicStream();
       streamRef.current = stream;
       const recorder = new MediaRecorder(stream);
       recorderRef.current = recorder;
@@ -245,8 +246,12 @@ const EchoBooth: React.FC = () => {
           recorderRef.current.stop();
         }
       }, RECORD_MAX_MS);
-    } catch {
-      setMicError('Microphone access is needed to record. Check your browser permissions.');
+    } catch (err) {
+      setMicError(
+        err instanceof Error
+          ? err.message
+          : 'Couldn’t start the microphone. Check your browser permissions and try again.',
+      );
       setRecording(false);
     }
   }, [recording, clearRecording, playSequence, phrase]);

@@ -116,6 +116,23 @@ export const VOWELS: VowelForm[] = [
   { id: 'vow-ao', form: 'เ◌า', phoneme: 'ao', length: 'short', position: 'wrap' },
 ];
 
+// ── The four tone marks (วรรณยุกต์) ──────────────────────────────────────────
+// Shown on the dotted-circle placeholder (◌) so the mark renders in isolation.
+
+export interface ToneMark {
+  id: string;
+  mark: string; // combining mark on a dotted circle, e.g. '◌่'
+  name: string; // romanized name, e.g. 'mai ek'
+  nameThai: string; // Thai name, e.g. 'ไม้เอก'
+}
+
+export const TONE_MARKS: ToneMark[] = [
+  { id: 'mark-ek', mark: '◌่', name: 'mai ek', nameThai: 'ไม้เอก' },
+  { id: 'mark-tho', mark: '◌้', name: 'mai tho', nameThai: 'ไม้โท' },
+  { id: 'mark-tri', mark: '◌๊', name: 'mai tri', nameThai: 'ไม้ตรี' },
+  { id: 'mark-chattawa', mark: '◌๋', name: 'mai chattawa', nameThai: 'ไม้จัตวา' },
+];
+
 // ── Tone-rule cards (~10) ────────────────────────────────────────────────────
 
 export const TONE_RULES: ToneRuleCard[] = [
@@ -253,6 +270,93 @@ export const RUNG_ORDER: string[] = RUNGS.map((r) => r.id);
 export const CONSONANT_BY_ID: Record<string, Consonant> = Object.fromEntries(
   CONSONANTS.map((c) => [c.id, c]),
 );
+
+// Acrophonic-word pictographs — vector SVGs in `public/alphabet/{id}.svg`, sourced
+// from OpenMoji (CC BY-SA 4.0; see public/alphabet/ATTRIBUTION.md). Seven acrophonic
+// words have no honest pictograph match — cymbals (ฉิ่ง), goad (ปฏัก), pedestal (ฐาน),
+// novice monk (เณร), lid (ฝา), offering tray (พาน), sala pavilion (ศาลา) — and fall
+// back to the word alone in the chart.
+const NO_PICTOGRAPH = new Set<string>([
+  'cons-cho-ching',
+  'cons-to-patak',
+  'cons-tho-than',
+  'cons-no-nen',
+  'cons-fo-fa',
+  'cons-pho-phan',
+  'cons-so-sala',
+]);
+
+export function consonantPictograph(id: string): string | null {
+  if (!CONSONANT_BY_ID[id] || NO_PICTOGRAPH.has(id)) return null;
+  return `${import.meta.env.BASE_URL}alphabet/${id}.svg`;
+}
+
+// The acrophonic word in Thai — the word that completes a consonant's spoken
+// name, so playback says the whole "กอ ไก่" (ko kai) the way it's taught and
+// recited, not just the bare letter sound. This is the source of truth for
+// *spoken* names and is intentionally separate from `example` (the *display*
+// word): the two usually coincide but can differ — e.g. ฑ is named มณโฑ
+// (montho) yet commonly exampled with มณฑล (region).
+const ACROPHONY_TH: Record<string, string> = {
+  'cons-ko-kai': 'ไก่',
+  'cons-kho-khai': 'ไข่',
+  'cons-kho-khuat': 'ขวด',
+  'cons-kho-khwai': 'ควาย',
+  'cons-kho-khon': 'คน',
+  'cons-kho-rakhang': 'ระฆัง',
+  'cons-ngo-ngu': 'งู',
+  'cons-cho-chan': 'จาน',
+  'cons-cho-ching': 'ฉิ่ง',
+  'cons-cho-chang': 'ช้าง',
+  'cons-so-so': 'โซ่',
+  'cons-cho-choe': 'เฌอ',
+  'cons-yo-ying': 'หญิง',
+  'cons-do-chada': 'ชฎา',
+  'cons-to-patak': 'ปฏัก',
+  'cons-tho-than': 'ฐาน',
+  'cons-tho-montho': 'มณโฑ',
+  'cons-tho-phuthao': 'ผู้เฒ่า',
+  'cons-no-nen': 'เณร',
+  'cons-do-dek': 'เด็ก',
+  'cons-to-tao': 'เต่า',
+  'cons-tho-thung': 'ถุง',
+  'cons-tho-thahan': 'ทหาร',
+  'cons-tho-thong': 'ธง',
+  'cons-no-nu': 'หนู',
+  'cons-bo-baimai': 'ใบไม้',
+  'cons-po-pla': 'ปลา',
+  'cons-pho-phueng': 'ผึ้ง',
+  'cons-fo-fa': 'ฝา',
+  'cons-pho-phan': 'พาน',
+  'cons-fo-fan': 'ฟัน',
+  'cons-pho-samphao': 'สำเภา',
+  'cons-mo-ma': 'ม้า',
+  // Spoken as ยัก (yak); the displayed spelling ยักษ์ has a silent ษ์ the voice
+  // otherwise mangles into an extra syllable.
+  'cons-yo-yak': 'ยัก',
+  'cons-ro-ruea': 'เรือ',
+  'cons-lo-ling': 'ลิง',
+  'cons-wo-waen': 'แหวน',
+  'cons-so-sala': 'ศาลา',
+  'cons-so-ruesi': 'ฤๅษี',
+  'cons-so-suea': 'เสือ',
+  'cons-ho-hip': 'หีบ',
+  'cons-lo-chula': 'จุฬา',
+  'cons-o-ang': 'อ่าง',
+  'cons-ho-nokhuk': 'นกฮูก',
+};
+
+// Full spoken name for a consonant: the letter-name syllable plus the acrophonic
+// word, e.g. ฉ → "ฉอ ฉิ่ง" (cho ching). The letter name is spelled as a real
+// syllable (glyph + อ) rather than the bare glyph — TTS pronounces a lone
+// consonant letter inconsistently (some voices drop it, e.g. ฉ), but glyph+อ is
+// an unambiguous syllable whose tone falls out of normal spelling rules and
+// matches the recited name.
+export function consonantSpokenName(c: Consonant): string {
+  const letterName = `${c.glyph}อ`;
+  const word = ACROPHONY_TH[c.id];
+  return word ? `${letterName} ${word}` : letterName;
+}
 
 export function getRung(id: string): Rung | undefined {
   return RUNGS.find((r) => r.id === id);
