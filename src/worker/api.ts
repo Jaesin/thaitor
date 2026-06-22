@@ -1,4 +1,6 @@
 import { getCachedTranslation, setCachedTranslation } from '../data/translationCache';
+import { t10n } from '../data/t10n';
+import type { TonalSyllable, TranslateResponse as T10nTranslateResponse } from '@jaesin/t10n-client';
 
 export type Syllable = { th: string; rom: string; tone: 'mid'|'low'|'falling'|'high'|'rising'; cls: 'mid'|'high'|'low' };
 export type TranslateResponse = { syllables: Syllable[]; en: string; rtgs: string; particle: 'khrap'|'kha'|'neutral' };
@@ -10,53 +12,54 @@ export type Gender = 'male' | 'female';
 
 export type TranslateArgs = { text: string; formality?: Formality; gender?: Gender };
 
-// VITE_API_BASE lets e2e (and manual testing) point the dev server at the
-// deployed Worker instead of the local one — used by the live test profile.
-const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  (import.meta.env.DEV
-    ? 'http://localhost:5001'
-    : '');
+const TONES = new Set<Syllable['tone']>(['mid', 'low', 'falling', 'high', 'rising']);
+const CLASSES = new Set<Syllable['cls']>(['mid', 'high', 'low']);
 
-async function authHeaders(): Promise<Record<string, string>> {
-  const { auth, ensureSignedIn } = await import('../firebase');
-  const user = auth.currentUser ?? (await ensureSignedIn());
-  const token = await user.getIdToken();
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+// Map a t10n TonalSyllable onto Thaitor's Syllable. The worker already normalizes
+// `tone` to the five-value set and drops an out-of-range `class`, so the guards
+// here are belt-and-suspenders (and pin the literal union types).
+function toSyllable(s: TonalSyllable): Syllable {
+  const tone = TONES.has(s.tone as Syllable['tone']) ? (s.tone as Syllable['tone']) : 'mid';
+  const cls = s.class && CLASSES.has(s.class as Syllable['cls']) ? (s.class as Syllable['cls']) : 'mid';
+  return { th: s.text, rom: s.romanization, tone, cls };
 }
 
-export async function translate({ text, formality, gender }: TranslateArgs): Promise<TranslateResponse> {
+function toSyllables(res: T10nTranslateResponse): Syllable[] {
+  return (res.syllables ?? []).map(toSyllable);
+}
+
+export async function translate({ text, formality }: TranslateArgs): Promise<TranslateResponse> {
   const cached = getCachedTranslation(text);
   if (cached) return cached;
-  const res = await fetch(`${API_BASE}/translate`, {
-    method: 'POST',
-    headers: await authHeaders(),
-    body: JSON.stringify({ text, formality, gender }),
+  const res = await t10n.translate({
+    from: 'en',
+    to: 'th',
+    text,
+    register: formality === 'casual' ? 'casual' : 'polite',
   });
-  if (!res.ok) throw new Error(`translate: ${res.status}`);
-  const result = (await res.json()) as TranslateResponse;
+  const result: TranslateResponse = {
+    syllables: toSyllables(res),
+    en: res.source,
+    rtgs: res.rtgs ?? res.romanization ?? '',
+    particle: res.particle ?? 'neutral',
+  };
   setCachedTranslation(text, result);
   return result;
 }
 
-// Thai → English lookup. Skips the en-th translation cache (different shape)
-// and sends explicit from/to language codes to the worker.
+// Thai → English lookup. The worker annotates the Thai *source* (the `syllables`
+// array describes the source for th→en), so we still get the tone breakdown.
 export async function translateThEn({ text }: { text: string }): Promise<ThEnResponse> {
-  const res = await fetch(`${API_BASE}/translate`, {
-    method: 'POST',
-    headers: await authHeaders(),
-    body: JSON.stringify({ text, from: 'th', to: 'en' }),
-  });
-  if (!res.ok) throw new Error(`translateThEn: ${res.status}`);
-  return (await res.json()) as ThEnResponse;
+  const res = await t10n.translate({ from: 'th', to: 'en', text });
+  return {
+    th: res.source,
+    en: res.text,
+    syllables: toSyllables(res),
+    gloss: res.segments.map((s) => s.gloss).filter(Boolean).join(', '),
+  };
 }
 
 export async function tts({ text, voice }: { text: string; voice?: string }): Promise<TtsResponse> {
-  const res = await fetch(`${API_BASE}/tts`, {
-    method: 'POST',
-    headers: await authHeaders(),
-    body: JSON.stringify({ text, voice }),
-  });
-  if (!res.ok) throw new Error(`tts: ${res.status}`);
-  return res.json();
+  const res = await t10n.fetchSpeech({ text, voice });
+  return { audioContent: res.audio.base64 };
 }

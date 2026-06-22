@@ -1,27 +1,41 @@
 import type { BrowserContext, Page, Route } from '@playwright/test';
 
-// A deterministic translate payload shaped like the Worker's /translate
-// response (see src/worker/api.ts: TranslateResponse). Keeps the UI fully
-// functional without ever calling Gemini.
+// Deterministic translate payloads shaped like the t10n worker's /translate
+// response (see @jaesin/t10n-client: TranslateResponse — Thai-side aids
+// `syllables`/`particle`/`rtgs`). Keeps the UI fully functional without ever
+// calling Gemini. `source` is what the app maps to the English gloss, so it
+// matches the "hello" the feature types in.
 const TRANSLATE_RESPONSE = {
-  en: 'hello',
-  rtgs: 'sawatdee khrap',
-  particle: 'khrap',
+  from: 'en',
+  to: 'th',
+  source: 'hello',
+  text: 'สวัสดีครับ',
+  romanization: 'sà-wàt-dii khráp',
+  tones: ['low', 'low', 'mid', 'high'],
+  segments: [{ source: 'hello', target: 'สวัสดี', gloss: 'a greeting' }],
   syllables: [
-    { th: 'สวัส', rom: 'sa-wat', tone: 'low', cls: 'high' },
-    { th: 'ดี', rom: 'dee', tone: 'mid', cls: 'mid' },
-    { th: 'ครับ', rom: 'khrap', tone: 'high', cls: 'high' },
+    { text: 'สวัส', romanization: 'sà-wàt', tone: 'low', class: 'high' },
+    { text: 'ดี', romanization: 'dii', tone: 'mid', class: 'mid' },
+    { text: 'ครับ', romanization: 'khráp', tone: 'high', class: 'high' },
   ],
+  particle: 'khrap',
+  rtgs: 'sawatdi khrap',
+  model: 'mock',
+  cached: false,
 };
 
 const TH_EN_RESPONSE = {
-  th: 'สวัสดี',
-  en: 'hello',
-  gloss: 'a greeting',
+  from: 'th',
+  to: 'en',
+  source: 'สวัสดี',
+  text: 'hello',
+  segments: [{ source: 'สวัสดี', target: 'hello', gloss: 'a greeting' }],
   syllables: [
-    { th: 'สวัส', rom: 'sa-wat', tone: 'low', cls: 'high' },
-    { th: 'ดี', rom: 'dee', tone: 'mid', cls: 'mid' },
+    { text: 'สวัส', romanization: 'sà-wàt', tone: 'low', class: 'high' },
+    { text: 'ดี', romanization: 'dii', tone: 'mid', class: 'mid' },
   ],
+  model: 'mock',
+  cached: false,
 };
 
 // 1x1 silent-ish MP3 frame, base64. Never actually played — audio output is
@@ -77,7 +91,10 @@ export async function installWorkerMocks(target: BrowserContext | Page): Promise
         },
       });
     }
-    return fulfillJson(route, { audioContent: FAKE_AUDIO_B64 });
+    return fulfillJson(route, {
+      audio: { base64: FAKE_AUDIO_B64, format: 'mp3', duration_seconds: 0 },
+      cached: false,
+    });
   });
 }
 
